@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Acquisition System — Dashboard</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f8f7f4;
+    --surface: #ffffff;
+    --surface-2: #f1f0ec;
+    --text-primary: #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted: #898781;
+    --border: rgba(11,11,11,0.10);
+    --border-strong: rgba(11,11,11,0.18);
+    --accent: #2a78d6;
+    --accent-bg: #e6f1fb;
+    --accent-text: #185fa5;
+    --success: #3b6d11;
+    --success-bg: #eaf3de;
+    --warning: #854f0b;
+    --warning-bg: #faeeda;
+    --danger: #a32d2d;
+    --danger-bg: #fcebeb;
+    --pro: #534ab7;
+    --pro-bg: #eeedfe;
+    --radius: 8px;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #111110;
+      --surface: #1a1a19;
+      --surface-2: #222220;
+      --text-primary: #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted: #898781;
+      --border: rgba(255,255,255,0.10);
+      --border-strong: rgba(255,255,255,0.18);
+      --accent: #3987e5;
+      --accent-bg: #042c53;
+      --accent-text: #85b7eb;
+      --success: #c0dd97;
+      --success-bg: #173404;
+      --warning: #fac775;
+      --warning-bg: #412402;
+      --danger: #f09595;
+      --danger-bg: #501313;
+      --pro: #afa9ec;
+      --pro-bg: #26215c;
+    }
+  }
+  body { background: var(--bg); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.5; min-height: 100vh; }
+  .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; }
+  .header-left h1 { font-size: 20px; font-weight: 500; }
+  .header-left p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+  .badge { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 500; }
+  .badge-caliente { background: var(--danger-bg); color: var(--danger); }
+  .badge-templado { background: var(--warning-bg); color: var(--warning); }
+  .badge-frio { background: var(--surface-2); color: var(--text-muted); border: 0.5px solid var(--border-strong); }
+  .badge-contacted { background: var(--accent-bg); color: var(--accent-text); }
+  .badge-booked { background: var(--success-bg); color: var(--success); }
+  .badge-new { background: var(--surface-2); color: var(--text-muted); }
+  .badge-seguimiento { background: var(--pro-bg); color: var(--pro); }
+  .badge-closed { background: var(--success-bg); color: var(--success); }
+  .badge-lost { background: var(--surface-2); color: var(--text-muted); }
+  .refresh-btn { background: var(--surface); border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 6px 14px; font-size: 13px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px; }
+  .refresh-btn:hover { background: var(--surface-2); }
+  .period-tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; }
+  .period-tab { font-size: 13px; padding: 5px 14px; border-radius: var(--radius); border: 0.5px solid var(--border-strong); background: none; cursor: pointer; color: var(--text-secondary); transition: all 0.15s; }
+  .period-tab.active { background: var(--accent); color: #fff; border-color: transparent; }
+  .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
+  .kpi { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
+  .kpi-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .kpi-value { font-size: 32px; font-weight: 500; line-height: 1; color: var(--text-primary); }
+  .kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+  .kpi-accent .kpi-value { color: var(--accent); }
+  .kpi-success .kpi-value { color: var(--success); }
+  .kpi-warning .kpi-value { color: var(--warning); }
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
+  @media (max-width: 600px) { .charts-grid { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .section-title { font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 500; color: var(--text-muted); font-size: 11px; padding: 8px 10px; border-bottom: 0.5px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; }
+  td { padding: 10px 10px; border-bottom: 0.5px solid var(--border); color: var(--text-primary); }
+  tr:last-child td { border-bottom: none; }
+  .empty { color: var(--text-muted); text-align: center; padding: 3rem; font-size: 14px; }
+  .loading { color: var(--text-muted); font-size: 14px; }
+  .error { color: var(--danger); font-size: 14px; }
+  .spinning { animation: spin 1s linear infinite; display: inline-block; }
+  @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+  .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .dot-green { background: #639922; }
+  .dot-gray { background: var(--text-muted); }
+  .status-bar { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="header-left">
+      <h1>AI Acquisition System</h1>
+      <p>Dashboard en tiempo real</p>
+    </div>
+    <button class="refresh-btn" onclick="init()">
+      <i class="ti ti-refresh" id="refresh-icon"></i> Actualizar
+    </button>
+  </div>
+
+  <div class="period-tabs">
+    <button class="period-tab active" onclick="setPeriod('week',this)">Esta semana</button>
+    <button class="period-tab" onclick="setPeriod('month',this)">Este mes</button>
+    <button class="period-tab" onclick="setPeriod('all',this)">Total</button>
+  </div>
+
+  <div class="kpi-grid" id="kpi-grid">
+    <div class="kpi"><div class="kpi-label">Leads nuevos</div><div class="kpi-value loading">—</div></div>
+    <div class="kpi kpi-accent"><div class="kpi-label">Llamadas agendadas</div><div class="kpi-value loading">—</div></div>
+    <div class="kpi kpi-success"><div class="kpi-label">Tasa de conversión</div><div class="kpi-value loading">—</div></div>
+    <div class="kpi kpi-warning"><div class="kpi-label">Leads activos</div><div class="kpi-value loading">—</div></div>
+  </div>
+
+  <div class="charts-grid">
+    <div class="card">
+      <div class="card-title">Por fase</div>
+      <div style="position:relative;height:200px"><canvas id="faseChart" role="img" aria-label="Leads por fase">Distribución por fase.</canvas></div>
+    </div>
+    <div class="card">
+      <div class="card-title">Por temperatura</div>
+      <div style="position:relative;height:200px"><canvas id="tempChart" role="img" aria-label="Leads por temperatura">Distribución por temperatura.</canvas></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Leads recientes</div>
+    <div id="leads-list"><div class="loading empty">Cargando datos...</div></div>
+  </div>
+
+  <div style="margin-top:1rem; text-align:center;">
+    <div class="status-bar" style="justify-content:center;">
+      <span class="dot dot-green"></span>
+      <span id="last-update">Conectado a Supabase</span>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPABASE_URL = 'https://govlsomhnxhlgdkkxibd.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_M4zLfv90Pmmsn2EuHJYTIg__jJiH2rQ';
+
+let allLeads = [];
+let rawLeads = [];
+let currentPeriod = 'week';
+let faseChart, tempChart;
+
+async function apiFetch(table, params = '') {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+  });
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+  return res.json();
+}
+
+function filterByPeriod(leads, period) {
+  const now = new Date();
+  const dow = now.getDay();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
+  startOfWeek.setHours(0,0,0,0);
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  return leads.filter(l => {
+    const d = new Date(l.created_at || l.fecha_primer_contacto);
+    if (period === 'week') return d >= startOfWeek;
+    if (period === 'month') return d >= startOfMonth;
+    return true;
+  });
+}
+
+function setPeriod(p, el) {
+  currentPeriod = p;
+  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function render() {
+  const filtered = filterByPeriod(rawLeads, currentPeriod);
+  const total = filtered.length;
+  const agendados = filtered.filter(l => l.agendado).length;
+  const tasa = total > 0 ? Math.round((agendados / total) * 100) : 0;
+  const activos = rawLeads.filter(l => !l.agendado && l.estado !== 'closed' && l.estado !== 'lost').length;
+  const label = currentPeriod === 'week' ? 'esta semana' : currentPeriod === 'month' ? 'este mes' : 'en total';
+
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi"><div class="kpi-label">Leads nuevos</div><div class="kpi-value">${total}</div><div class="kpi-sub">${label}</div></div>
+    <div class="kpi kpi-accent"><div class="kpi-label">Llamadas agendadas</div><div class="kpi-value">${agendados}</div><div class="kpi-sub">${label}</div></div>
+    <div class="kpi kpi-success"><div class="kpi-label">Tasa de conversión</div><div class="kpi-value">${tasa}%</div><div class="kpi-sub">leads → llamada</div></div>
+    <div class="kpi kpi-warning"><div class="kpi-label">Leads activos</div><div class="kpi-value">${activos}</div><div class="kpi-sub">en conversación</div></div>
+  `;
+
+  const fases = ['rapport','descubrimiento','problema','dolor','cualificacion','confianza','objeciones','cierre','booking'];
+  const faseCounts = fases.map(f => filtered.filter(l => l.fase === f).length);
+
+  const temps = ['caliente','templado','frio'];
+  const tempCounts = temps.map(t => filtered.filter(l => l.temperatura === t).length);
+
+  const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+  const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
+  const tickColor = isDark ? '#898781' : '#898781';
+
+  if (faseChart) faseChart.destroy();
+  faseChart = new Chart(document.getElementById('faseChart'), {
+    type: 'bar',
+    data: {
+      labels: fases.map(f => f.charAt(0).toUpperCase() + f.slice(1)),
+      datasets: [{ data: faseCounts, backgroundColor: '#2a78d6', borderRadius: 4, borderSkipped: false }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { font: { size: 10 }, color: tickColor, maxRotation: 45, autoSkip: false }, grid: { display: false } },
+        y: { ticks: { font: { size: 10 }, color: tickColor, stepSize: 1 }, grid: { color: gridColor }, beginAtZero: true }
+      }
+    }
+  });
+
+  if (tempChart) tempChart.destroy();
+  tempChart = new Chart(document.getElementById('tempChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Caliente','Templado','Frío'],
+      datasets: [{ data: tempCounts, backgroundColor: ['#e24b4a','#eda100','#888780'], borderWidth: 2, borderColor: isDark ? '#1a1a19' : '#fff' }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '62%',
+      plugins: {
+        legend: { display: false }
+      }
+    }
+  });
+
+  const el = document.getElementById('leads-list');
+  if (!allLeads || allLeads.length === 0) {
+    el.innerHTML = '<div class="empty">Sin leads todavía — el sistema está listo</div>';
+    return;
+  }
+
+  const rows = allLeads.slice(0, 15).map(l => {
+    const temp = l.temperatura || 'frio';
+    const estado = l.estado || 'new';
+    const fecha = l.fecha_ultimo_contacto
+      ? new Date(l.fecha_ultimo_contacto).toLocaleDateString('es-ES', { day:'2-digit', month:'short' })
+      : l.created_at
+        ? new Date(l.created_at).toLocaleDateString('es-ES', { day:'2-digit', month:'short' })
+        : '—';
+    return `<tr>
+      <td><strong>${l.nombre || 'Sin nombre'}</strong></td>
+      <td style="color:var(--text-muted);font-size:12px">${l.fase || 'rapport'}</td>
+      <td><span class="badge badge-${temp}">${temp}</span></td>
+      <td><span class="badge badge-${estado}">${estado}</span></td>
+      <td style="color:var(--text-muted)">${fecha}</td>
+    </tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <table>
+      <thead><tr><th>Nombre</th><th>Fase</th><th>Temperatura</th><th>Estado</th><th>Último contacto</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    ${allLeads.length > 15 ? `<p style="font-size:12px;color:var(--text-muted);margin-top:10px;text-align:right">Mostrando 15 de ${allLeads.length} leads</p>` : ''}
+  `;
+
+  const now = new Date();
+  document.getElementById('last-update').textContent = `Actualizado a las ${now.toLocaleTimeString('es-ES', { hour:'2-digit', minute:'2-digit' })}`;
+}
+
+async function init() {
+  const icon = document.getElementById('refresh-icon');
+  icon.classList.add('spinning');
+  try {
+    const [v, r] = await Promise.all([
+      apiFetch('vista_leads', 'select=*&order=fecha_ultimo_contacto.desc.nullslast'),
+      apiFetch('leads', 'select=*&order=created_at.desc')
+    ]);
+    allLeads = v;
+    rawLeads = r;
+    render();
+  } catch(e) {
+    document.getElementById('kpi-grid').innerHTML = `<div class="error">Error al conectar con Supabase: ${e.message}</div>`;
+  } finally {
+    icon.classList.remove('spinning');
+  }
+}
+
+init();
+setInterval(init, 60000);
+</script>
+</body>
+</html>
