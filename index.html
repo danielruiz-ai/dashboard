@@ -112,6 +112,23 @@
   .dot-gray { background: var(--text-muted); }
   .status-bar { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
   .mt-16 { margin-top: 16px; }
+  .view-tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; }
+  .view-tab { font-size: 13px; padding: 6px 16px; border-radius: var(--radius); border: 0.5px solid var(--border-strong); background: none; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
+  .view-tab.active { background: var(--accent); color: #fff; border-color: transparent; }
+  .view-tab i { font-size: 15px; }
+  #resumen-view.hidden { display: none; }
+  #pipeline-view { display: none; }
+  #pipeline-view.active { display: block; }
+  .kanban-board { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 12px; }
+  .kanban-column { flex: 0 0 220px; background: var(--surface-2); border-radius: var(--radius); padding: 10px; }
+  .kanban-column-header { font-size: 12px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 4px 10px; display: flex; justify-content: space-between; align-items: center; }
+  .kanban-count { background: var(--surface); border-radius: 999px; padding: 1px 8px; font-size: 11px; color: var(--text-muted); }
+  .kanban-cards { display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
+  .kanban-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px; cursor: pointer; transition: border-color 0.15s; }
+  .kanban-card:hover { border-color: var(--border-strong); }
+  .kanban-card-name { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
+  .kanban-card-time { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+  .kanban-empty { text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px 8px; }
 </style>
 </head>
 <body>
@@ -143,6 +160,12 @@
     </div>
   </div>
 
+  <div class="view-tabs">
+    <button class="view-tab active" onclick="setView('resumen',this)"><i class="ti ti-chart-bar"></i> Resumen</button>
+    <button class="view-tab" onclick="setView('pipeline',this)"><i class="ti ti-layout-kanban"></i> Pipeline</button>
+  </div>
+
+  <div id="resumen-view">
   <div class="kpi-grid" id="kpi-grid">
     <div class="kpi"><div class="kpi-label">Leads nuevos</div><div class="kpi-value loading">—</div></div>
     <div class="kpi kpi-accent"><div class="kpi-label">Llamadas agendadas</div><div class="kpi-value loading">—</div></div>
@@ -184,6 +207,11 @@
       <span class="dot dot-green"></span>
       <span id="last-update">Conectado a Supabase</span>
     </div>
+  </div>
+  </div>
+
+  <div id="pipeline-view">
+    <div class="kanban-board" id="kanban-board"></div>
   </div>
 </div>
 
@@ -507,6 +535,54 @@ async function init() {
   } finally {
     icon.classList.remove('spinning');
   }
+}
+
+function setView(view, el) {
+  document.querySelectorAll('.view-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('resumen-view').classList.toggle('hidden', view !== 'resumen');
+  document.getElementById('pipeline-view').classList.toggle('active', view === 'pipeline');
+  if (view === 'pipeline') renderKanban();
+}
+
+function renderKanban() {
+  const fases = ['rapport','descubrimiento','problema','dolor','cualificacion','confianza','objeciones','cierre','booking'];
+  const board = document.getElementById('kanban-board');
+  if (!board) return;
+
+  const columnas = fases.map(fase => {
+    const leadsEnFase = rawLeads.filter(l => (l.fase || 'rapport') === fase);
+
+    const cards = leadsEnFase.map(l => {
+      const temp = l.temperatura || 'frio';
+      const nombre = (l.nombre || 'Sin nombre').replace(/</g, '&lt;');
+      const fechaRef = l.fecha_ultimo_contacto || l.created_at;
+      const horasEnFase = fechaRef ? Math.round((new Date() - new Date(fechaRef)) / 3600000) : null;
+      const tiempoTexto = horasEnFase === null ? '' : horasEnFase < 24 ? `hace ${horasEnFase}h` : `hace ${Math.round(horasEnFase/24)}d`;
+
+      return `
+        <div class="kanban-card">
+          <div class="kanban-card-name">${nombre}</div>
+          <span class="badge badge-${temp}">${temp}</span>
+          <div class="kanban-card-time">${tiempoTexto}</div>
+        </div>
+      `;
+    }).join('');
+
+    return `
+      <div class="kanban-column">
+        <div class="kanban-column-header">
+          <span>${fase.charAt(0).toUpperCase() + fase.slice(1)}</span>
+          <span class="kanban-count">${leadsEnFase.length}</span>
+        </div>
+        <div class="kanban-cards">
+          ${cards || '<div class="kanban-empty">Sin leads</div>'}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  board.innerHTML = columnas;
 }
 
 init();
