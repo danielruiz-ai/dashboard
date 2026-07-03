@@ -400,7 +400,7 @@ function render() {
   `;
 
   const fases = ['rapport','descubrimiento','problema','dolor','cualificacion','confianza','objeciones','cierre','booking'];
-  const faseCounts = fases.map(f => filtered.filter(l => l.fase === f).length);
+  const faseCounts = fases.map(f => filtered.filter(l => (l.fase || '').trim().toLowerCase() === f).length);
 
   const temps = ['caliente','templado','frio'];
   const tempCounts = temps.map(t => filtered.filter(l => l.temperatura === t).length);
@@ -551,7 +551,7 @@ function renderKanban() {
   if (!board) return;
 
   const columnas = fases.map(fase => {
-    const leadsEnFase = rawLeads.filter(l => (l.fase || 'rapport') === fase);
+    const leadsEnFase = rawLeads.filter(l => ((l.fase || 'rapport').trim().toLowerCase()) === fase);
 
     const cards = leadsEnFase.map(l => {
       const temp = l.temperatura || 'frio';
