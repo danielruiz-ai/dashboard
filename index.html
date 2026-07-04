@@ -523,12 +523,9 @@ async function init() {
   const icon = document.getElementById('refresh-icon');
   icon.classList.add('spinning');
   try {
-    const [v, r] = await Promise.all([
-      apiFetch('vista_leads', 'select=*&order=fecha_ultimo_contacto.desc.nullslast'),
-      apiFetch('leads', 'select=*&order=created_at.desc')
-    ]);
+    const v = await apiFetch('vista_leads', 'select=*&order=fecha_ultimo_contacto.desc.nullslast');
     allLeads = v;
-    rawLeads = r;
+    rawLeads = v;
     render();
   } catch(e) {
     document.getElementById('kpi-grid').innerHTML = `<div class="error">Error al conectar con Supabase: ${e.message}</div>`;
