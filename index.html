@@ -9,53 +9,31 @@
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #f8f7f4;
-    --surface: #ffffff;
-    --surface-2: #f1f0ec;
-    --text-primary: #0b0b0b;
-    --text-secondary: #52514e;
-    --text-muted: #898781;
-    --border: rgba(11,11,11,0.10);
-    --border-strong: rgba(11,11,11,0.18);
-    --accent: #2a78d6;
-    --accent-bg: #e6f1fb;
-    --accent-text: #185fa5;
-    --success: #3b6d11;
-    --success-bg: #eaf3de;
-    --warning: #854f0b;
-    --warning-bg: #faeeda;
-    --danger: #a32d2d;
-    --danger-bg: #fcebeb;
-    --pro: #534ab7;
-    --pro-bg: #eeedfe;
+    --bg: #f8f7f4; --surface: #ffffff; --surface-2: #f1f0ec;
+    --text-primary: #0b0b0b; --text-secondary: #52514e; --text-muted: #898781;
+    --border: rgba(11,11,11,0.10); --border-strong: rgba(11,11,11,0.18);
+    --accent: #2a78d6; --accent-bg: #e6f1fb; --accent-text: #185fa5;
+    --success: #3b6d11; --success-bg: #eaf3de;
+    --warning: #854f0b; --warning-bg: #faeeda;
+    --danger: #a32d2d; --danger-bg: #fcebeb;
+    --pro: #534ab7; --pro-bg: #eeedfe;
     --radius: 8px;
   }
   @media (prefers-color-scheme: dark) {
     :root {
-      --bg: #111110;
-      --surface: #1a1a19;
-      --surface-2: #222220;
-      --text-primary: #ffffff;
-      --text-secondary: #c3c2b7;
-      --text-muted: #898781;
-      --border: rgba(255,255,255,0.10);
-      --border-strong: rgba(255,255,255,0.18);
-      --accent: #3987e5;
-      --accent-bg: #042c53;
-      --accent-text: #85b7eb;
-      --success: #c0dd97;
-      --success-bg: #173404;
-      --warning: #fac775;
-      --warning-bg: #412402;
-      --danger: #f09595;
-      --danger-bg: #501313;
-      --pro: #afa9ec;
-      --pro-bg: #26215c;
+      --bg: #111110; --surface: #1a1a19; --surface-2: #222220;
+      --text-primary: #ffffff; --text-secondary: #c3c2b7; --text-muted: #898781;
+      --border: rgba(255,255,255,0.10); --border-strong: rgba(255,255,255,0.18);
+      --accent: #3987e5; --accent-bg: #042c53; --accent-text: #85b7eb;
+      --success: #c0dd97; --success-bg: #173404;
+      --warning: #fac775; --warning-bg: #412402;
+      --danger: #f09595; --danger-bg: #501313;
+      --pro: #afa9ec; --pro-bg: #26215c;
     }
   }
   body { background: var(--bg); color: var(--text-primary); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 15px; line-height: 1.5; min-height: 100vh; }
   .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
-  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem; flex-wrap: wrap; gap: 12px; }
+  .header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 12px; }
   .header-left h1 { font-size: 20px; font-weight: 500; }
   .header-left p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
   .badge { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 500; }
@@ -71,10 +49,12 @@
   .badge-canal { background: var(--surface-2); color: var(--text-secondary); border: 0.5px solid var(--border-strong); }
   .refresh-btn { background: var(--surface); border: 0.5px solid var(--border-strong); border-radius: var(--radius); padding: 6px 14px; font-size: 13px; color: var(--text-secondary); cursor: pointer; display: flex; align-items: center; gap: 6px; }
   .refresh-btn:hover { background: var(--surface-2); }
+  .tab-row { display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 1rem; }
+  .tab-btn { font-size: 13px; padding: 5px 14px; border-radius: var(--radius); border: 0.5px solid var(--border-strong); background: none; cursor: pointer; color: var(--text-secondary); transition: all 0.15s; }
+  .tab-btn.active { background: var(--accent); color: #fff; border-color: transparent; }
+  .client-tab.active { background: var(--pro); }
   .period-row { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin-bottom: 1.5rem; }
   .period-tabs { display: flex; gap: 4px; flex-wrap: wrap; }
-  .period-tab { font-size: 13px; padding: 5px 14px; border-radius: var(--radius); border: 0.5px solid var(--border-strong); background: none; cursor: pointer; color: var(--text-secondary); transition: all 0.15s; }
-  .period-tab.active { background: var(--accent); color: #fff; border-color: transparent; }
   .custom-range { display: none; align-items: center; gap: 6px; font-size: 13px; }
   .custom-range.active { display: flex; }
   .custom-range input[type="date"] {
@@ -96,7 +76,11 @@
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 1.5rem; }
   @media (max-width: 600px) { .charts-grid { grid-template-columns: 1fr; } .period-row { flex-direction: column; align-items: stretch; } }
   .card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1.25rem; }
-  .card-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.05em; }
+  .card-title-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; flex-wrap: wrap; gap: 8px; }
+  .card-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .mini-tabs { display: flex; gap: 4px; }
+  .mini-tab { font-size: 11px; padding: 3px 9px; border-radius: 6px; border: 0.5px solid var(--border-strong); background: none; cursor: pointer; color: var(--text-secondary); }
+  .mini-tab.active { background: var(--accent); color: #fff; border-color: transparent; }
   .section-title { font-size: 15px; font-weight: 500; color: var(--text-primary); margin-bottom: 12px; }
   table { width: 100%; border-collapse: collapse; font-size: 13px; }
   th { text-align: left; font-weight: 500; color: var(--text-muted); font-size: 11px; padding: 8px 10px; border-bottom: 0.5px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -109,13 +93,10 @@
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   .dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
   .dot-green { background: #639922; }
-  .dot-gray { background: var(--text-muted); }
   .status-bar { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); }
-  .mt-16 { margin-top: 16px; }
   .view-tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; }
   .view-tab { font-size: 13px; padding: 6px 16px; border-radius: var(--radius); border: 0.5px solid var(--border-strong); background: none; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; gap: 6px; }
   .view-tab.active { background: var(--accent); color: #fff; border-color: transparent; }
-  .view-tab i { font-size: 15px; }
   #resumen-view.hidden { display: none; }
   #pipeline-view { display: none; }
   #pipeline-view.active { display: block; }
@@ -124,8 +105,7 @@
   .kanban-column-header { font-size: 12px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; padding: 6px 4px 10px; display: flex; justify-content: space-between; align-items: center; }
   .kanban-count { background: var(--surface); border-radius: 999px; padding: 1px 8px; font-size: 11px; color: var(--text-muted); }
   .kanban-cards { display: flex; flex-direction: column; gap: 8px; min-height: 40px; }
-  .kanban-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px; cursor: pointer; transition: border-color 0.15s; }
-  .kanban-card:hover { border-color: var(--border-strong); }
+  .kanban-card { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 10px; }
   .kanban-card-name { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
   .kanban-card-time { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
   .kanban-empty { text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px 8px; }
@@ -135,22 +115,24 @@
 <div class="container">
   <div class="header">
     <div class="header-left">
-      <h1>AI Acquisition System</h1>
-      <p>Dashboard en tiempo real</p>
+      <h1 id="dashboard-title">AI Acquisition System</h1>
+      <p id="dashboard-subtitle">Dashboard en tiempo real</p>
     </div>
     <button class="refresh-btn" onclick="init()">
       <i class="ti ti-refresh" id="refresh-icon"></i> Actualizar
     </button>
   </div>
 
+  <div class="tab-row" id="client-tabs"></div>
+
   <div class="period-row">
     <div class="period-tabs">
-      <button class="period-tab active" onclick="setPeriod('week',this)">Esta semana</button>
-      <button class="period-tab" onclick="setPeriod('last_week',this)">Semana pasada</button>
-      <button class="period-tab" onclick="setPeriod('month',this)">Este mes</button>
-      <button class="period-tab" onclick="setPeriod('last_month',this)">Mes pasado</button>
-      <button class="period-tab" onclick="setPeriod('all',this)">Total</button>
-      <button class="period-tab" onclick="setPeriod('custom',this)">Personalizado</button>
+      <button class="tab-btn active" onclick="setPeriod('week',this)">Esta semana</button>
+      <button class="tab-btn" onclick="setPeriod('last_week',this)">Semana pasada</button>
+      <button class="tab-btn" onclick="setPeriod('month',this)">Este mes</button>
+      <button class="tab-btn" onclick="setPeriod('last_month',this)">Mes pasado</button>
+      <button class="tab-btn" onclick="setPeriod('all',this)">Total</button>
+      <button class="tab-btn" onclick="setPeriod('custom',this)">Personalizado</button>
     </div>
     <div class="custom-range" id="custom-range">
       <input type="date" id="date-from">
@@ -177,22 +159,29 @@
 
   <div class="charts-grid">
     <div class="card">
-      <div class="card-title">Por fase</div>
+      <div class="card-title-row"><div class="card-title">Por fase</div></div>
       <div style="position:relative;height:200px"><canvas id="faseChart" role="img" aria-label="Leads por fase">Distribución por fase.</canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">Por temperatura</div>
+      <div class="card-title-row"><div class="card-title">Por temperatura</div></div>
       <div style="position:relative;height:200px"><canvas id="tempChart" role="img" aria-label="Leads por temperatura">Distribución por temperatura.</canvas></div>
     </div>
   </div>
 
   <div class="charts-grid">
     <div class="card">
-      <div class="card-title">Por canal</div>
+      <div class="card-title-row"><div class="card-title">Por canal</div></div>
       <div style="position:relative;height:180px"><canvas id="canalChart" role="img" aria-label="Leads por canal">Distribución por canal.</canvas></div>
     </div>
     <div class="card">
-      <div class="card-title">Leads a lo largo del tiempo</div>
+      <div class="card-title-row">
+        <div class="card-title">Leads a lo largo del tiempo</div>
+        <div class="mini-tabs" id="timeline-tabs">
+          <button class="mini-tab active" onclick="setTimelineGranularity('day',this)">Día</button>
+          <button class="mini-tab" onclick="setTimelineGranularity('week',this)">Semana</button>
+          <button class="mini-tab" onclick="setTimelineGranularity('month',this)">Mes</button>
+        </div>
+      </div>
       <div style="position:relative;height:180px"><canvas id="timelineChart" role="img" aria-label="Leads en el tiempo">Evolución de leads.</canvas></div>
     </div>
   </div>
@@ -219,11 +208,19 @@
 const SUPABASE_URL = 'https://govlsomhnxhlgdkkxibd.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_M4zLfv90Pmmsn2EuHJYTIg__jJiH2rQ';
 
+const urlParams = new URLSearchParams(window.location.search);
+const forcedCliente = urlParams.get('cliente'); // si viene en la URL, dashboard bloqueado a ese cliente
+
+let masterLeads = [];      // todos los leads, sin filtrar
+let allClientesList = [];  // lista de clientes (id, nombre)
+let selectedCliente = forcedCliente || null;
+
 let allLeads = [];
 let rawLeads = [];
 let currentPeriod = 'week';
 let customFrom = null;
 let customTo = null;
+let timelineGranularity = 'day';
 let faseChart, tempChart, canalChart, timelineChart;
 
 async function apiFetch(table, params = '') {
@@ -234,7 +231,6 @@ async function apiFetch(table, params = '') {
   return res.json();
 }
 
-// Devuelve [start, end) para el periodo seleccionado
 function getRangeForPeriod(period) {
   const now = new Date();
   const dow = now.getDay();
@@ -242,32 +238,25 @@ function getRangeForPeriod(period) {
   startOfThisWeek.setDate(now.getDate() - (dow === 0 ? 6 : dow - 1));
   startOfThisWeek.setHours(0,0,0,0);
 
-  if (period === 'week') {
-    return [startOfThisWeek, new Date(now.getTime() + 1)];
-  }
+  if (period === 'week') return [startOfThisWeek, new Date(now.getTime() + 1)];
   if (period === 'last_week') {
-    const start = new Date(startOfThisWeek);
-    start.setDate(start.getDate() - 7);
+    const start = new Date(startOfThisWeek); start.setDate(start.getDate() - 7);
     const end = new Date(startOfThisWeek);
     return [start, end];
   }
-  if (period === 'month') {
-    return [new Date(now.getFullYear(), now.getMonth(), 1), new Date(now.getTime() + 1)];
-  }
+  if (period === 'month') return [new Date(now.getFullYear(), now.getMonth(), 1), new Date(now.getTime() + 1)];
   if (period === 'last_month') {
     const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const end = new Date(now.getFullYear(), now.getMonth(), 1);
     return [start, end];
   }
   if (period === 'custom' && customFrom && customTo) {
-    const end = new Date(customTo);
-    end.setDate(end.getDate() + 1); // incluir el día "hasta"
+    const end = new Date(customTo); end.setDate(end.getDate() + 1);
     return [new Date(customFrom), end];
   }
-  return [new Date(0), new Date(now.getTime() + 1)]; // 'all'
+  return [new Date(0), new Date(now.getTime() + 1)];
 }
 
-// Rango inmediatamente anterior de la misma duración, para comparativa
 function getPreviousRange(period) {
   const [start, end] = getRangeForPeriod(period);
   const durationMs = end - start;
@@ -285,15 +274,11 @@ function filterByRange(leads, start, end) {
 
 function setPeriod(p, el) {
   currentPeriod = p;
-  document.querySelectorAll('.period-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.period-tabs .tab-btn').forEach(t => t.classList.remove('active'));
   el.classList.add('active');
   const customEl = document.getElementById('custom-range');
-  if (p === 'custom') {
-    customEl.classList.add('active');
-    return; // esperar a que pulse "Aplicar"
-  } else {
-    customEl.classList.remove('active');
-  }
+  if (p === 'custom') { customEl.classList.add('active'); return; }
+  customEl.classList.remove('active');
   render();
 }
 
@@ -301,9 +286,50 @@ function applyCustomRange() {
   const from = document.getElementById('date-from').value;
   const to = document.getElementById('date-to').value;
   if (!from || !to) { alert('Selecciona ambas fechas'); return; }
-  customFrom = from;
-  customTo = to;
+  customFrom = from; customTo = to;
   render();
+}
+
+function setTimelineGranularity(g, el) {
+  timelineGranularity = g;
+  document.querySelectorAll('#timeline-tabs .mini-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+// -------- Pestañas por cliente --------
+function renderClientTabs() {
+  const wrap = document.getElementById('client-tabs');
+  if (forcedCliente) { wrap.style.display = 'none'; return; }
+  if (!allClientesList.length) { wrap.style.display = 'none'; return; }
+
+  let html = `<button class="tab-btn client-tab ${selectedCliente === null ? 'active' : ''}" onclick="selectCliente(null,this)">Todos los clientes</button>`;
+  allClientesList.forEach(c => {
+    html += `<button class="tab-btn client-tab ${selectedCliente === c.id ? 'active' : ''}" onclick="selectCliente('${c.id}',this)">${c.nombre}</button>`;
+  });
+  wrap.innerHTML = html;
+}
+
+function selectCliente(id, el) {
+  selectedCliente = id;
+  document.querySelectorAll('.client-tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  applyClienteFilter();
+}
+
+function applyClienteFilter() {
+  const working = selectedCliente ? masterLeads.filter(l => l.cliente_id === selectedCliente) : masterLeads;
+  allLeads = working;
+  rawLeads = working;
+  render();
+  if (document.getElementById('pipeline-view').classList.contains('active')) renderKanban();
+}
+
+function updateHeaderForForcedClient() {
+  if (!forcedCliente) return;
+  const cliente = allClientesList.find(c => c.id === forcedCliente);
+  document.getElementById('dashboard-title').textContent = cliente ? cliente.nombre : 'Dashboard';
+  document.getElementById('dashboard-subtitle').textContent = 'Tus métricas en tiempo real';
 }
 
 function trendHtml(current, previous) {
@@ -378,10 +404,8 @@ function render() {
     </div>
   `;
 
-  // Segunda fila: tiempo medio de respuesta + show-up
   const avgResp = avgResponseMinutes(filtered);
   const avgRespPrev = avgResponseMinutes(previous);
-
   const conShowupDato = filtered.filter(l => l.llamada_asistida !== null && l.llamada_asistida !== undefined);
   const showups = conShowupDato.filter(l => l.llamada_asistida === true).length;
   const showupRate = conShowupDato.length > 0 ? Math.round((showups / conShowupDato.length) * 100) : null;
@@ -410,15 +434,12 @@ function render() {
 
   const isDark = matchMedia('(prefers-color-scheme: dark)').matches;
   const gridColor = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
-  const tickColor = isDark ? '#898781' : '#898781';
+  const tickColor = '#898781';
 
   if (faseChart) faseChart.destroy();
   faseChart = new Chart(document.getElementById('faseChart'), {
     type: 'bar',
-    data: {
-      labels: fases.map(f => f.charAt(0).toUpperCase() + f.slice(1)),
-      datasets: [{ data: faseCounts, backgroundColor: '#2a78d6', borderRadius: 4, borderSkipped: false }]
-    },
+    data: { labels: fases.map(f => f.charAt(0).toUpperCase() + f.slice(1)), datasets: [{ data: faseCounts, backgroundColor: '#2a78d6', borderRadius: 4, borderSkipped: false }] },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
@@ -432,52 +453,57 @@ function render() {
   if (tempChart) tempChart.destroy();
   tempChart = new Chart(document.getElementById('tempChart'), {
     type: 'doughnut',
-    data: {
-      labels: ['Caliente','Tibio','Frío'],
-      datasets: [{ data: tempCounts, backgroundColor: ['#e24b4a','#eda100','#888780'], borderWidth: 2, borderColor: isDark ? '#1a1a19' : '#fff' }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '62%',
-      plugins: { legend: { display: false } }
-    }
+    data: { labels: ['Caliente','Tibio','Frío'], datasets: [{ data: tempCounts, backgroundColor: ['#e24b4a','#eda100','#888780'], borderWidth: 2, borderColor: isDark ? '#1a1a19' : '#fff' }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { display: false } } }
   });
 
   if (canalChart) canalChart.destroy();
   canalChart = new Chart(document.getElementById('canalChart'), {
     type: 'doughnut',
-    data: {
-      labels: canales.length ? canales : ['Sin datos'],
-      datasets: [{ data: canalCounts.length ? canalCounts : [1], backgroundColor: ['#2a78d6','#639922','#eda100','#a32d2d','#534ab7'], borderWidth: 2, borderColor: isDark ? '#1a1a19' : '#fff' }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false, cutout: '62%',
-      plugins: { legend: { position: 'bottom', labels: { color: tickColor, font: { size: 11 } } } }
-    }
+    data: { labels: canales.length ? canales : ['Sin datos'], datasets: [{ data: canalCounts.length ? canalCounts : [1], backgroundColor: ['#2a78d6','#639922','#eda100','#a32d2d','#534ab7'], borderWidth: 2, borderColor: isDark ? '#1a1a19' : '#fff' }] },
+    options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: tickColor, font: { size: 11 } } } } }
   });
 
-  // Timeline: leads por día dentro del rango
-  const dayBuckets = {};
-  filtered.forEach(l => {
+  // ---- Timeline con granularidad Día / Semana / Mes ----
+  // Día respeta el periodo seleccionado arriba; Semana/Mes usan todo el histórico
+  // del cliente seleccionado, para poder ver la tendencia de varios meses.
+  const timelineSource = timelineGranularity === 'day' ? filtered : rawLeads;
+  const buckets = new Map();
+
+  timelineSource.forEach(l => {
     const d = new Date(l.created_at || l.fecha_primer_contacto);
-    const key = d.toLocaleDateString('es-ES', { day: '2-digit', month: '2-digit' });
-    dayBuckets[key] = (dayBuckets[key] || 0) + 1;
+    let key, dlabel;
+    if (timelineGranularity === 'day') {
+      key = d.toISOString().slice(0,10);
+      dlabel = d.toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit' });
+    } else if (timelineGranularity === 'week') {
+      const ws = new Date(d);
+      const dow = ws.getDay();
+      ws.setDate(ws.getDate() - (dow === 0 ? 6 : dow - 1));
+      key = ws.toISOString().slice(0,10);
+      dlabel = 'Sem ' + ws.toLocaleDateString('es-ES', { day:'2-digit', month:'2-digit' });
+    } else {
+      key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      dlabel = d.toLocaleDateString('es-ES', { month:'short', year:'2-digit' });
+    }
+    if (!buckets.has(key)) buckets.set(key, { label: dlabel, count: 0 });
+    buckets.get(key).count++;
   });
-  const dayLabels = Object.keys(dayBuckets);
-  const dayCounts = Object.values(dayBuckets);
+
+  const sortedKeys = [...buckets.keys()].sort();
+  const dayLabels = sortedKeys.map(k => buckets.get(k).label);
+  const dayCounts = sortedKeys.map(k => buckets.get(k).count);
 
   if (timelineChart) timelineChart.destroy();
   timelineChart = new Chart(document.getElementById('timelineChart'), {
     type: 'line',
-    data: {
-      labels: dayLabels.length ? dayLabels : ['Sin datos'],
-      datasets: [{ data: dayCounts.length ? dayCounts : [0], borderColor: '#2a78d6', backgroundColor: 'rgba(42,120,214,0.15)', fill: true, tension: 0.3, pointRadius: 3 }]
-    },
+    data: { labels: dayLabels.length ? dayLabels : ['Sin datos'], datasets: [{ data: dayCounts.length ? dayCounts : [0], borderColor: '#2a78d6', backgroundColor: 'rgba(42,120,214,0.15)', fill: true, tension: 0.3, pointRadius: 3 }] },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { font: { size: 10 }, color: tickColor }, grid: { display: false } },
-        y: { ticks: { font: { size: 10 }, color: tickColor, stepSize: 1 }, grid: { color: gridColor }, beginAtZero: true }
+        x: { ticks: { font: { size: 10 }, color: tickColor, maxRotation: 45, autoSkip: true }, grid: { display: false } },
+        y: { ticks: { font: { size: 10 }, color: tickColor, stepSize: Math.max(1, Math.ceil(Math.max(...dayCounts, 1)/6)) }, grid: { color: gridColor }, beginAtZero: true }
       }
     }
   });
@@ -523,10 +549,16 @@ async function init() {
   const icon = document.getElementById('refresh-icon');
   icon.classList.add('spinning');
   try {
-    const v = await apiFetch('vista_leads', 'select=*&order=fecha_ultimo_contacto.desc.nullslast');
-    allLeads = v;
-    rawLeads = v;
-    render();
+    const [leadsData, clientesData] = await Promise.all([
+      apiFetch('vista_leads', 'select=*&order=fecha_ultimo_contacto.desc.nullslast'),
+      apiFetch('vista_clientes', 'select=*')
+    ]);
+    masterLeads = leadsData;
+    allClientesList = clientesData;
+
+    renderClientTabs();
+    updateHeaderForForcedClient();
+    applyClienteFilter();
   } catch(e) {
     document.getElementById('kpi-grid').innerHTML = `<div class="error">Error al conectar con Supabase: ${e.message}</div>`;
   } finally {
@@ -549,34 +581,15 @@ function renderKanban() {
 
   const columnas = fases.map(fase => {
     const leadsEnFase = rawLeads.filter(l => ((l.fase || 'rapport').trim().toLowerCase()) === fase);
-
     const cards = leadsEnFase.map(l => {
       const temp = l.temperatura || 'frio';
       const nombre = (l.nombre || 'Sin nombre').replace(/</g, '&lt;');
       const fechaRef = l.fecha_ultimo_contacto || l.created_at;
       const horasEnFase = fechaRef ? Math.round((new Date() - new Date(fechaRef)) / 3600000) : null;
       const tiempoTexto = horasEnFase === null ? '' : horasEnFase < 24 ? `hace ${horasEnFase}h` : `hace ${Math.round(horasEnFase/24)}d`;
-
-      return `
-        <div class="kanban-card">
-          <div class="kanban-card-name">${nombre}</div>
-          <span class="badge badge-${temp}">${temp}</span>
-          <div class="kanban-card-time">${tiempoTexto}</div>
-        </div>
-      `;
+      return `<div class="kanban-card"><div class="kanban-card-name">${nombre}</div><span class="badge badge-${temp}">${temp}</span><div class="kanban-card-time">${tiempoTexto}</div></div>`;
     }).join('');
-
-    return `
-      <div class="kanban-column">
-        <div class="kanban-column-header">
-          <span>${fase.charAt(0).toUpperCase() + fase.slice(1)}</span>
-          <span class="kanban-count">${leadsEnFase.length}</span>
-        </div>
-        <div class="kanban-cards">
-          ${cards || '<div class="kanban-empty">Sin leads</div>'}
-        </div>
-      </div>
-    `;
+    return `<div class="kanban-column"><div class="kanban-column-header"><span>${fase.charAt(0).toUpperCase() + fase.slice(1)}</span><span class="kanban-count">${leadsEnFase.length}</span></div><div class="kanban-cards">${cards || '<div class="kanban-empty">Sin leads</div>'}</div></div>`;
   }).join('');
 
   board.innerHTML = columnas;
