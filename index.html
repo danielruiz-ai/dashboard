@@ -60,7 +60,7 @@
   .header-left p { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
   .badge { display: inline-block; font-size: 11px; padding: 3px 10px; border-radius: 999px; font-weight: 500; }
   .badge-caliente { background: var(--danger-bg); color: var(--danger); }
-  .badge-templado { background: var(--warning-bg); color: var(--warning); }
+  .badge-tibio { background: var(--warning-bg); color: var(--warning); }
   .badge-frio { background: var(--surface-2); color: var(--text-muted); border: 0.5px solid var(--border-strong); }
   .badge-contacted { background: var(--accent-bg); color: var(--accent-text); }
   .badge-booked { background: var(--success-bg); color: var(--success); }
@@ -402,7 +402,7 @@ function render() {
   const fases = ['rapport','descubrimiento','problema','dolor','cualificacion','confianza','objeciones','cierre','booking'];
   const faseCounts = fases.map(f => filtered.filter(l => (l.fase || '').trim().toLowerCase() === f).length);
 
-  const temps = ['caliente','templado','frio'];
+  const temps = ['caliente','tibio','frio'];
   const tempCounts = temps.map(t => filtered.filter(l => l.temperatura === t).length);
 
   const canales = [...new Set(rawLeads.map(l => l.canal).filter(Boolean))];
@@ -433,7 +433,7 @@ function render() {
   tempChart = new Chart(document.getElementById('tempChart'), {
     type: 'doughnut',
     data: {
-      labels: ['Caliente','Templado','Frío'],
+      labels: ['Caliente','Tibio','Frío'],
       datasets: [{ data: tempCounts, backgroundColor: ['#e24b4a','#eda100','#888780'], borderWidth: 2, borderColor: isDark ? '#1a1a19' : '#fff' }]
     },
     options: {
