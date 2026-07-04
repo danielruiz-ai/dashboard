@@ -109,9 +109,34 @@
   .kanban-card-name { font-size: 13px; font-weight: 500; color: var(--text-primary); margin-bottom: 6px; }
   .kanban-card-time { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
   .kanban-empty { text-align: center; color: var(--text-muted); font-size: 12px; padding: 20px 8px; }
+
+  /* Candado de acceso */
+  #lock-screen {
+    position: fixed; inset: 0; background: var(--bg); z-index: 9999;
+    display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 14px;
+  }
+  #lock-screen input {
+    background: var(--surface); border: 0.5px solid var(--border-strong); border-radius: var(--radius);
+    padding: 10px 14px; font-size: 15px; color: var(--text-primary); font-family: inherit; width: 220px; text-align: center;
+  }
+  #lock-screen button {
+    background: var(--accent); color: #fff; border: none; border-radius: var(--radius);
+    padding: 10px 20px; font-size: 14px; cursor: pointer;
+  }
+  #lock-error { color: var(--danger); font-size: 13px; min-height: 16px; }
+  #app-content { display: none; }
 </style>
 </head>
 <body>
+
+<div id="lock-screen">
+  <div style="font-size:15px;color:var(--text-secondary);margin-bottom:4px;">Introduce la contraseña</div>
+  <input type="password" id="lock-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter') checkPassword()">
+  <button onclick="checkPassword()">Entrar</button>
+  <div id="lock-error"></div>
+</div>
+
+<div id="app-content">
 <div class="container">
   <div class="header">
     <div class="header-left">
@@ -203,16 +228,41 @@
     <div class="kanban-board" id="kanban-board"></div>
   </div>
 </div>
+</div>
 
 <script>
+// ===== Candado de acceso (protección básica, no es seguridad real) =====
+const DASHBOARD_PASSWORD = 'CambiaEstaClave2026'; // <-- cámbiala por la tuya
+
+function checkPassword() {
+  const input = document.getElementById('lock-password').value;
+  if (input === DASHBOARD_PASSWORD) {
+    sessionStorage.setItem('dashboard_unlocked', 'true');
+    unlockDashboard();
+  } else {
+    document.getElementById('lock-error').textContent = 'Contraseña incorrecta';
+  }
+}
+
+function unlockDashboard() {
+  document.getElementById('lock-screen').style.display = 'none';
+  document.getElementById('app-content').style.display = 'block';
+  init();
+}
+
+if (sessionStorage.getItem('dashboard_unlocked') === 'true') {
+  unlockDashboard();
+}
+
+// ===== Dashboard =====
 const SUPABASE_URL = 'https://govlsomhnxhlgdkkxibd.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_M4zLfv90Pmmsn2EuHJYTIg__jJiH2rQ';
 
 const urlParams = new URLSearchParams(window.location.search);
-const forcedCliente = urlParams.get('cliente'); // si viene en la URL, dashboard bloqueado a ese cliente
+const forcedCliente = urlParams.get('cliente');
 
-let masterLeads = [];      // todos los leads, sin filtrar
-let allClientesList = [];  // lista de clientes (id, nombre)
+let masterLeads = [];
+let allClientesList = [];
 let selectedCliente = forcedCliente || null;
 
 let allLeads = [];
@@ -297,7 +347,6 @@ function setTimelineGranularity(g, el) {
   render();
 }
 
-// -------- Pestañas por cliente --------
 function renderClientTabs() {
   const wrap = document.getElementById('client-tabs');
   if (forcedCliente) { wrap.style.display = 'none'; return; }
@@ -464,9 +513,6 @@ function render() {
     options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { position: 'bottom', labels: { color: tickColor, font: { size: 11 } } } } }
   });
 
-  // ---- Timeline con granularidad Día / Semana / Mes ----
-  // Día respeta el periodo seleccionado arriba; Semana/Mes usan todo el histórico
-  // del cliente seleccionado, para poder ver la tendencia de varios meses.
   const timelineSource = timelineGranularity === 'day' ? filtered : rawLeads;
   const buckets = new Map();
 
@@ -595,8 +641,7 @@ function renderKanban() {
   board.innerHTML = columnas;
 }
 
-init();
-setInterval(init, 60000);
+setInterval(() => { if (document.getElementById('app-content').style.display === 'block') init(); }, 60000);
 </script>
 </body>
 </html>
