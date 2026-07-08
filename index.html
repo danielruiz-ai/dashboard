@@ -506,20 +506,12 @@ function render() {
 
   const avgResp = avgResponseMinutes(filtered);
   const avgRespPrev = avgResponseMinutes(previous);
-  const conShowupDato = filtered.filter(l => l.llamada_asistida !== null && l.llamada_asistida !== undefined);
-  const showups = conShowupDato.filter(l => l.llamada_asistida === true).length;
-  const showupRate = conShowupDato.length > 0 ? Math.round((showups / conShowupDato.length) * 100) : null;
 
   document.getElementById('kpi-grid-2').innerHTML = `
     <div class="kpi">
       <div class="kpi-label">Tiempo medio 1ª respuesta</div>
       <div class="kpi-value" style="font-size:24px">${formatMinutes(avgResp)}</div>
       <div class="kpi-sub">${currentPeriod === 'all' || avgRespPrev === null ? 'desde comentario/DM inicial' : (avgResp <= avgRespPrev ? `<span class="trend-up"><i class="ti ti-arrow-down-right"></i> mejora vs anterior</span>` : `<span class="trend-down"><i class="ti ti-arrow-up-right"></i> más lento vs anterior</span>`)}</div>
-    </div>
-    <div class="kpi">
-      <div class="kpi-label">Tasa de show-up</div>
-      <div class="kpi-value" style="font-size:24px">${showupRate === null ? '—' : showupRate + '%'}</div>
-      <div class="kpi-sub">${conShowupDato.length === 0 ? 'sin datos todavía' : `${showups}/${conShowupDato.length} llamadas asistidas`}</div>
     </div>
   `;
 
