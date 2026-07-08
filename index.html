@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Acquisition System — Dashboard</title>
+<title>Massatorii — Dashboard</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
 <style>
@@ -141,7 +141,7 @@
 <div class="container">
   <div class="header">
     <div class="header-left">
-      <h1 id="dashboard-title">AI Acquisition System</h1>
+      <h1 id="dashboard-title">Massatorii</h1>
       <p id="dashboard-subtitle">Dashboard en tiempo real</p>
     </div>
     <button class="refresh-btn" onclick="init()">
@@ -204,7 +204,7 @@
     </div>
     <div class="card">
       <div class="card-title-row">
-        <div class="card-title">Leads a lo largo del tiempo</div>
+        <div class="card-title">Leads y citas agendadas a lo largo del tiempo</div>
         <div class="mini-tabs" id="timeline-tabs">
           <button class="mini-tab active" onclick="setTimelineGranularity('day',this)">Día</button>
           <button class="mini-tab" onclick="setTimelineGranularity('week',this)">Semana</button>
@@ -558,9 +558,9 @@ function render() {
 
   const timelineSource = timelineGranularity === 'day' ? filtered : rawLeads;
   const buckets = new Map();
+  const bookingBuckets = new Map();
 
-  timelineSource.forEach(l => {
-    const d = new Date(l.created_at || l.fecha_primer_contacto);
+  function bucketKeyAndLabel(d) {
     let key, dlabel;
     if (timelineGranularity === 'day') {
       key = d.toISOString().slice(0,10);
@@ -575,24 +575,56 @@ function render() {
       key = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
       dlabel = d.toLocaleDateString('es-ES', { month:'short', year:'2-digit' });
     }
+    return { key, dlabel };
+  }
+
+  timelineSource.forEach(l => {
+    const d = new Date(l.created_at || l.fecha_primer_contacto);
+    const { key, dlabel } = bucketKeyAndLabel(d);
     if (!buckets.has(key)) buckets.set(key, { label: dlabel, count: 0 });
     buckets.get(key).count++;
   });
 
-  const sortedKeys = [...buckets.keys()].sort();
-  const dayLabels = sortedKeys.map(k => buckets.get(k).label);
-  const dayCounts = sortedKeys.map(k => buckets.get(k).count);
+  // Serie de citas agendadas: usamos la fecha de la llamada si existe,
+  // y si no, la fecha del propio lead (para no perder citas sin fecha registrada)
+  timelineSource.filter(l => l.agendado === true).forEach(l => {
+    const d = new Date(l.llamada_fecha || l.created_at || l.fecha_primer_contacto);
+    const { key, dlabel } = bucketKeyAndLabel(d);
+    if (!bookingBuckets.has(key)) bookingBuckets.set(key, { label: dlabel, count: 0 });
+    bookingBuckets.get(key).count++;
+  });
+
+  const sortedKeys = [...new Set([...buckets.keys(), ...bookingBuckets.keys()])].sort();
+  const dayLabels = sortedKeys.map(k => (buckets.get(k) || bookingBuckets.get(k)).label);
+  const dayCounts = sortedKeys.map(k => buckets.has(k) ? buckets.get(k).count : 0);
+  const bookingCounts = sortedKeys.map(k => bookingBuckets.has(k) ? bookingBuckets.get(k).count : 0);
 
   if (timelineChart) timelineChart.destroy();
   timelineChart = new Chart(document.getElementById('timelineChart'), {
     type: 'line',
-    data: { labels: dayLabels.length ? dayLabels : ['Sin datos'], datasets: [{ data: dayCounts.length ? dayCounts : [0], borderColor: '#2a78d6', backgroundColor: 'rgba(42,120,214,0.15)', fill: true, tension: 0.3, pointRadius: 3 }] },
+    data: {
+      labels: dayLabels.length ? dayLabels : ['Sin datos'],
+      datasets: [
+        {
+          label: 'Leads nuevos',
+          data: dayCounts.length ? dayCounts : [0],
+          borderColor: '#2a78d6', backgroundColor: 'rgba(42,120,214,0.15)',
+          fill: true, tension: 0.3, pointRadius: 3
+        },
+        {
+          label: 'Citas agendadas',
+          data: bookingCounts.length ? bookingCounts : [0],
+          borderColor: '#3b6d11', backgroundColor: 'rgba(59,109,17,0.15)',
+          fill: true, tension: 0.3, pointRadius: 3
+        }
+      ]
+    },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { legend: { display: true, position: 'top', align: 'end', labels: { color: tickColor, font: { size: 11 }, boxWidth: 12 } } },
       scales: {
         x: { ticks: { font: { size: 10 }, color: tickColor, maxRotation: 45, autoSkip: true }, grid: { display: false } },
-        y: { ticks: { font: { size: 10 }, color: tickColor, stepSize: Math.max(1, Math.ceil(Math.max(...dayCounts, 1)/6)) }, grid: { color: gridColor }, beginAtZero: true }
+        y: { ticks: { font: { size: 10 }, color: tickColor, stepSize: Math.max(1, Math.ceil(Math.max(...dayCounts, ...bookingCounts, 1)/6)) }, grid: { color: gridColor }, beginAtZero: true }
       }
     }
   });
