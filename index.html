@@ -130,8 +130,9 @@
 <body>
 
 <div id="lock-screen">
-  <div style="font-size:15px;color:var(--text-secondary);margin-bottom:4px;">Introduce la contraseña</div>
-  <input type="password" id="lock-password" placeholder="Contraseña" onkeydown="if(event.key==='Enter') checkPassword()">
+  <div style="font-size:15px;color:var(--text-secondary);margin-bottom:4px;">Inicia sesión</div>
+  <input type="email" id="lock-email" placeholder="Email" autocomplete="username">
+  <input type="password" id="lock-password" placeholder="Contraseña" autocomplete="current-password" onkeydown="if(event.key==='Enter') checkPassword()">
   <button onclick="checkPassword()">Entrar</button>
   <div id="lock-error"></div>
 </div>
@@ -145,6 +146,9 @@
     </div>
     <button class="refresh-btn" onclick="init()">
       <i class="ti ti-refresh" id="refresh-icon"></i> Actualizar
+    </button>
+    <button class="refresh-btn" onclick="logout()" style="margin-left:8px;">
+      <i class="ti ti-logout"></i> Salir
     </button>
   </div>
 
@@ -230,34 +234,76 @@
 </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-// ===== Candado de acceso (protección básica, no es seguridad real) =====
-const DASHBOARD_PASSWORD = 'CambiaEstaClave2026'; // <-- cámbiala por la tuya
+// ===== Supabase Auth real (reemplaza el candado de contraseña) =====
+const SUPABASE_URL = 'https://govlsomhnxhlgdkkxibd.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_M4zLfv90Pmmsn2EuHJYTIg__jJiH2rQ';
 
-function checkPassword() {
-  const input = document.getElementById('lock-password').value;
-  if (input === DASHBOARD_PASSWORD) {
-    sessionStorage.setItem('dashboard_unlocked', 'true');
-    unlockDashboard();
-  } else {
-    document.getElementById('lock-error').textContent = 'Contraseña incorrecta';
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentUserPerfil = null; // { cliente_id, es_admin }
+
+async function checkPassword() {
+  const email = document.getElementById('lock-email').value.trim();
+  const password = document.getElementById('lock-password').value;
+  document.getElementById('lock-error').textContent = '';
+
+  const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+  if (error) {
+    document.getElementById('lock-error').textContent = 'Email o contraseña incorrectos';
+    return;
   }
+  await unlockDashboard();
 }
 
-function unlockDashboard() {
+async function logout() {
+  await supabaseClient.auth.signOut();
+  currentUser = null;
+  currentUserPerfil = null;
+  document.getElementById('app-content').style.display = 'none';
+  document.getElementById('lock-screen').style.display = 'flex';
+}
+
+async function unlockDashboard() {
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if (!session) return; // no hay sesión válida, se queda en el login
+
+  currentUser = session.user;
+
+  // Buscar el perfil (cliente_id / es_admin) del usuario logueado
+  const { data: perfil, error: perfilError } = await supabaseClient
+    .from('usuarios_dashboard')
+    .select('cliente_id, es_admin')
+    .eq('id', currentUser.id)
+    .single();
+
+  if (perfilError || !perfil) {
+    document.getElementById('lock-error').textContent = 'Tu usuario no tiene acceso configurado. Habla con Dani.';
+    await supabaseClient.auth.signOut();
+    return;
+  }
+
+  currentUserPerfil = perfil;
+
+  // Si el usuario NO es admin, lo dejamos fijado a su propio cliente
+  // y le ocultamos la pestaña de "Todos los clientes" / otros clientes.
+  if (!currentUserPerfil.es_admin) {
+    selectedCliente = currentUserPerfil.cliente_id;
+  }
+
   document.getElementById('lock-screen').style.display = 'none';
   document.getElementById('app-content').style.display = 'block';
   init();
 }
 
-if (sessionStorage.getItem('dashboard_unlocked') === 'true') {
-  unlockDashboard();
-}
+// Si ya hay una sesión activa (recarga de página), entra directo sin pedir login otra vez
+supabaseClient.auth.getSession().then(({ data: { session } }) => {
+  if (session) unlockDashboard();
+});
 
 // ===== Dashboard =====
-const SUPABASE_URL = 'https://govlsomhnxhlgdkkxibd.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_M4zLfv90Pmmsn2EuHJYTIg__jJiH2rQ';
-
 const urlParams = new URLSearchParams(window.location.search);
 const forcedCliente = urlParams.get('cliente');
 
@@ -274,8 +320,12 @@ let timelineGranularity = 'day';
 let faseChart, tempChart, canalChart, timelineChart;
 
 async function apiFetch(table, params = '') {
+  // Usamos el access_token del usuario logueado (no la key genérica),
+  // así Postgres aplica las políticas RLS según quién pregunta.
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  const token = session ? session.access_token : SUPABASE_KEY;
   const res = await fetch(`${SUPABASE_URL}/rest/v1/${table}?${params}`, {
-    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${SUPABASE_KEY}` }
+    headers: { 'apikey': SUPABASE_KEY, 'Authorization': `Bearer ${token}` }
   });
   if (!res.ok) throw new Error(`Error ${res.status}`);
   return res.json();
@@ -350,6 +400,7 @@ function setTimelineGranularity(g, el) {
 function renderClientTabs() {
   const wrap = document.getElementById('client-tabs');
   if (forcedCliente) { wrap.style.display = 'none'; return; }
+  if (currentUserPerfil && !currentUserPerfil.es_admin) { wrap.style.display = 'none'; return; }
   if (!allClientesList.length) { wrap.style.display = 'none'; return; }
 
   let html = `<button class="tab-btn client-tab ${selectedCliente === null ? 'active' : ''}" onclick="selectCliente(null,this)">Todos los clientes</button>`;
