@@ -186,14 +186,10 @@
 
   <div class="kpi-grid" id="kpi-grid-2"></div>
 
-  <div class="charts-grid">
+  <div class="charts-grid" style="grid-template-columns: 1fr">
     <div class="card">
       <div class="card-title-row"><div class="card-title">Por fase</div></div>
       <div style="position:relative;height:200px"><canvas id="faseChart" role="img" aria-label="Leads por fase">Distribución por fase.</canvas></div>
-    </div>
-    <div class="card">
-      <div class="card-title-row"><div class="card-title">Por temperatura</div></div>
-      <div style="position:relative;height:200px"><canvas id="tempChart" role="img" aria-label="Leads por temperatura">Distribución por temperatura.</canvas></div>
     </div>
   </div>
 
@@ -317,7 +313,7 @@ let currentPeriod = 'week';
 let customFrom = null;
 let customTo = null;
 let timelineGranularity = 'day';
-let faseChart, tempChart, canalChart, timelineChart;
+let faseChart, canalChart, timelineChart;
 
 async function apiFetch(table, params = '') {
   // Usamos el access_token del usuario logueado (no la key genérica),
@@ -518,9 +514,6 @@ function render() {
   const fases = ['rapport','descubrimiento','problema','dolor','cualificacion','confianza','objeciones','cierre','booking'];
   const faseCounts = fases.map(f => filtered.filter(l => (l.fase || '').trim().toLowerCase() === f).length);
 
-  const temps = ['caliente','tibio','frio'];
-  const tempCounts = temps.map(t => filtered.filter(l => l.temperatura === t).length);
-
   const canales = [...new Set(rawLeads.map(l => l.canal).filter(Boolean))];
   const canalCounts = canales.map(c => filtered.filter(l => l.canal === c).length);
 
@@ -540,13 +533,6 @@ function render() {
         y: { ticks: { font: { size: 10 }, color: tickColor, stepSize: 1 }, grid: { color: gridColor }, beginAtZero: true }
       }
     }
-  });
-
-  if (tempChart) tempChart.destroy();
-  tempChart = new Chart(document.getElementById('tempChart'), {
-    type: 'doughnut',
-    data: { labels: ['Caliente','Tibio','Frío'], datasets: [{ data: tempCounts, backgroundColor: ['#e24b4a','#eda100','#888780'], borderWidth: 2, borderColor: isDark ? '#1a1a19' : '#fff' }] },
-    options: { responsive: true, maintainAspectRatio: false, cutout: '62%', plugins: { legend: { display: false } } }
   });
 
   if (canalChart) canalChart.destroy();
