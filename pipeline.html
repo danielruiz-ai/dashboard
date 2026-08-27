@@ -788,21 +788,29 @@ function openModal(id, tab){
 
     <div class="modal-pane" id="pane-auditoria">
       <div style="margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);">
-        <label style="display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
-          Preguntas clave (pregúntaselo al cliente antes de generar)
-        </label>
-        <div class="field">
-          <label>¿Cuántas personas dedican a atender leads/clientes potenciales?</label>
-          <input type="number" id="ref-personas" value="${ct.personas_dedicadas != null ? ct.personas_dedicadas : ''}" placeholder="ej. 1">
-        </div>
-        <div class="field">
-          <label>¿Esas personas hacen otras tareas además de atender leads?</label>
-          <select id="ref-tareas">
-            <option value="">Sin especificar</option>
-            <option value="si" ${ct.tareas_compartidas === true ? 'selected' : ''}>Sí, tienen más tareas</option>
-            <option value="no" ${ct.tareas_compartidas === false ? 'selected' : ''}>No, están 100% dedicadas</option>
-          </select>
-        </div>
+        ${ct.equipo_detectado_auto != null ? `
+          <label style="display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
+            Tamaño de equipo detectado automáticamente
+          </label>
+          <p style="font-size:13px; color:var(--green); margin:0;">Equipo de ${ct.equipo_detectado_auto} persona(s), según su web — no hace falta preguntarlo.</p>
+        ` : `
+          <label style="display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
+            No lo detectamos solos — si surge en la conversación, mételo aquí
+          </label>
+          <div class="field">
+            <label>¿Cuántas personas dedican a atender leads/clientes potenciales?</label>
+            <input type="number" id="ref-personas" value="${ct.personas_dedicadas != null ? ct.personas_dedicadas : ''}" placeholder="ej. 1">
+          </div>
+          <div class="field">
+            <label>¿Esas personas hacen otras tareas además de atender leads?</label>
+            <select id="ref-tareas">
+              <option value="">Sin especificar</option>
+              <option value="si" ${ct.tareas_compartidas === true ? 'selected' : ''}>Sí, tienen más tareas</option>
+              <option value="no" ${ct.tareas_compartidas === false ? 'selected' : ''}>No, están 100% dedicadas</option>
+            </select>
+          </div>
+          <p style="font-size:10px; color:var(--text-muted); margin:4px 0 0;">No hace falta preguntarlo en frío — solo si sale de forma natural en la llamada.</p>
+        `}
       </div>
 
       <div id="auditoria-content">
@@ -916,10 +924,10 @@ async function runAudit(){
   btn.disabled = true;
   btn.textContent = 'Consultando Google...';
 
-  const personasVal = document.getElementById('ref-personas').value;
-  const tareasVal = document.getElementById('ref-tareas').value;
-  const personas = personasVal !== '' ? parseInt(personasVal) : null;
-  const tareas_compartidas = tareasVal === 'si' ? true : tareasVal === 'no' ? false : null;
+  const personasEl = document.getElementById('ref-personas');
+  const tareasEl = document.getElementById('ref-tareas');
+  const personas = personasEl && personasEl.value !== '' ? parseInt(personasEl.value) : null;
+  const tareas_compartidas = tareasEl ? (tareasEl.value === 'si' ? true : tareasEl.value === 'no' ? false : null) : null;
 
   const queryTexto = `${activeContact.empresa || activeContact.nombre} ${activeContact.ciudad || ''}`.trim();
 
@@ -939,9 +947,13 @@ async function runAudit(){
       return;
     }
 
-    const pctFinal = ajustePorEquipo(data.pct, personas, tareas_compartidas);
+    // Si ya se detectó el equipo automáticamente en la web, no volvemos a sumar el ajuste manual (evita contarlo dos veces)
+    const pctFinal = data.equipo_detectado_auto != null
+      ? data.pct
+      : ajustePorEquipo(data.pct, personas, tareas_compartidas);
+
     let textoFinal = data.texto;
-    if(personas != null){
+    if(data.equipo_detectado_auto == null && personas != null){
       const notaEquipo = tareas_compartidas === true
         ? `El cliente indica ${personas} persona(s) dedicada(s) a leads, compartiendo esa tarea con otras responsabilidades.`
         : tareas_compartidas === false
@@ -954,7 +966,8 @@ async function runAudit(){
       .update({
         auditoria_pct: pctFinal,
         auditoria_texto: textoFinal,
-        personas_dedicadas: personas,
+        personas_dedicadas: data.equipo_detectado_auto != null ? data.equipo_detectado_auto : personas,
+        equipo_detectado_auto: data.equipo_detectado_auto,
         tareas_compartidas: tareas_compartidas
       })
       .eq('id', activeContact.id);
