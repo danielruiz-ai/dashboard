@@ -1086,7 +1086,8 @@ async function runAudit(){
         query: queryTexto,
         empresa: activeContact.empresa,
         nombre: activeContact.nombre,
-        ciudad: activeContact.ciudad
+        ciudad: activeContact.ciudad,
+        idioma: activeContact.idioma
       })
     });
     const data = await res.json();
