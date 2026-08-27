@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Análisis gratuito — Massatorii</title>
+<title>Informe de análisis — Massatorii</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -25,80 +25,112 @@
   body{
     margin:0;
     font-family:'Space Grotesk', sans-serif;
-    background:radial-gradient(circle at top, #0C1424 0%, var(--navy) 60%);
+    background:radial-gradient(circle at top, #0C1424 0%, var(--navy) 65%);
     color:var(--text);
     min-height:100vh;
-    padding:28px 16px 60px;
+    padding:0 0 60px;
   }
-  .wrap{max-width:720px; margin:0 auto;}
-  .topbar{display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;}
-  .brand{font-size:16px; font-weight:800; letter-spacing:0.5px;}
-  .brand span{color:var(--red);}
-  .badge-free{
-    font-size:10px; font-weight:700; color:var(--gold); border:1px solid var(--gold);
-    padding:4px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.5px;
-  }
+  .wrap{max-width:760px; margin:0 auto; padding:0 16px;}
 
-  .hero{margin-bottom:22px;}
-  .hero .empresa{font-size:26px; font-weight:800; margin:0 0 4px;}
+  .coverbar{
+    background:var(--navy-2); border-bottom:1px solid var(--border);
+    padding:14px 0; margin-bottom:26px;
+  }
+  .coverbar-inner{
+    max-width:760px; margin:0 auto; padding:0 16px;
+    display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;
+  }
+  .brand{font-size:15px; font-weight:800; letter-spacing:0.5px;}
+  .brand span{color:var(--red);}
+  .report-meta{font-size:10.5px; color:var(--text-muted); text-align:right;}
+
+  .doc-title{font-size:11px; text-transform:uppercase; letter-spacing:1.2px; color:var(--gold); margin:0 0 6px; font-weight:700;}
+  .hero{margin-bottom:26px;}
+  .hero .empresa{font-size:27px; font-weight:800; margin:0 0 4px; line-height:1.2;}
   .hero .ciudad{font-size:13px; color:var(--text-muted); margin:0;}
 
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px;}
-  @media (max-width:520px){ .grid{grid-template-columns:1fr;} }
+  .verdict-panel{
+    background:linear-gradient(180deg, var(--navy-3), var(--navy-2));
+    border:1px solid var(--border); border-radius:18px; padding:26px 24px; margin-bottom:16px;
+    display:flex; align-items:center; gap:24px; flex-wrap:wrap;
+  }
+  .verdict-text{flex:1; min-width:220px;}
+  .verdict-badge{
+    display:inline-block; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:0.6px;
+    padding:5px 12px; border-radius:20px; margin-bottom:10px;
+  }
+  .verdict-headline{font-size:17px; font-weight:700; line-height:1.4; margin:0;}
+
+  .summary-panel{
+    background:var(--navy-3); border:1px solid var(--border); border-radius:16px;
+    padding:20px 22px; margin-bottom:16px;
+  }
+  .summary-panel p{font-size:14px; line-height:1.7; margin:0; color:var(--text);}
+
+  .grid{display:grid; grid-template-columns:1fr; gap:14px; margin-bottom:14px;}
 
   .panel{
     background:linear-gradient(180deg, var(--navy-3), var(--navy-2));
-    border:1px solid var(--border); border-radius:16px; padding:20px;
+    border:1px solid var(--border); border-radius:16px; padding:20px 22px;
   }
-  .panel-wide{grid-column:1 / -1;}
+  .panel-title{font-size:11px; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted); margin:0 0 14px; font-weight:700;}
 
-  .main-gauge{
-    display:flex; align-items:center; gap:22px; flex-wrap:wrap;
-  }
-  .main-gauge .label{
-    font-size:11px; text-transform:uppercase; letter-spacing:0.8px; color:var(--text-muted);
-    margin:0 0 6px;
-  }
-  .main-gauge .headline{font-size:15px; font-weight:600; line-height:1.4; max-width:280px;}
+  .stat-row{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:6px;}
+  .stat-mini{background:var(--navy-4); border-radius:12px; padding:14px 10px; text-align:center;}
+  .stat-mini .n{font-size:20px; font-weight:800; margin:0;}
+  .stat-mini .l{font-size:9.5px; color:var(--text-muted); margin:4px 0 0; text-transform:uppercase; letter-spacing:0.3px;}
 
-  .stat-row{display:grid; grid-template-columns:repeat(3, 1fr); gap:10px;}
-  .stat-mini{
-    background:var(--navy-4); border-radius:12px; padding:14px 12px; text-align:center;
+  .breakdown-row{
+    display:flex; gap:12px; padding:12px 0; border-bottom:1px solid var(--border); align-items:flex-start;
   }
-  .stat-mini .n{font-size:22px; font-weight:800; margin:0;}
-  .stat-mini .l{font-size:10px; color:var(--text-muted); margin:4px 0 0; text-transform:uppercase; letter-spacing:0.4px;}
-
-  .compare{margin-top:16px;}
-  .compare-row{display:flex; align-items:center; gap:10px; margin-bottom:10px;}
-  .compare-label{font-size:12px; width:110px; flex-shrink:0; color:var(--text-muted);}
-  .compare-bar-bg{flex:1; height:14px; background:var(--navy-4); border-radius:8px; overflow:hidden;}
-  .compare-bar{height:100%; border-radius:8px;}
-  .compare-val{font-size:12px; font-weight:700; width:44px; text-align:right;}
-
-  .detalle-title{font-size:11px; text-transform:uppercase; letter-spacing:0.6px; color:var(--text-muted); margin:0 0 10px;}
-  .detalle-list{margin:0; padding:0; list-style:none;}
-  .detalle-list li{
-    font-size:13px; line-height:1.6; padding:10px 0; border-bottom:1px solid var(--border);
-    display:flex; gap:10px;
+  .breakdown-row:last-child{border-bottom:none;}
+  .breakdown-icon{
+    width:26px; height:26px; border-radius:8px; flex-shrink:0; display:flex; align-items:center;
+    justify-content:center; font-size:12px; font-weight:800; margin-top:1px;
   }
-  .detalle-list li:last-child{border-bottom:none;}
-  .dot{width:6px; height:6px; border-radius:50%; margin-top:7px; flex-shrink:0;}
+  .breakdown-body{flex:1;}
+  .breakdown-head{display:flex; justify-content:space-between; gap:10px; margin-bottom:2px;}
+  .breakdown-label{font-weight:600; font-size:13.5px;}
+  .breakdown-val{font-weight:800; font-size:13.5px; flex-shrink:0;}
+  .breakdown-detail{color:var(--text-muted); font-size:12px; line-height:1.5;}
+
+  table.clientes{width:100%; border-collapse:collapse; font-size:13px;}
+  table.clientes th{
+    text-align:left; padding:8px 4px; color:var(--text-muted); font-weight:700;
+    font-size:10.5px; text-transform:uppercase; letter-spacing:0.4px; border-bottom:1px solid var(--border);
+  }
+  table.clientes th:not(:first-child){text-align:right;}
+  table.clientes td{padding:11px 4px; border-bottom:1px solid var(--border);}
+  table.clientes td:not(:first-child){text-align:right; font-weight:700;}
 
   .cta{
     background:linear-gradient(135deg, var(--red), #8f2119);
-    border-radius:16px; padding:22px 24px; text-align:center; margin-top:14px;
+    border-radius:16px; padding:24px; text-align:center; margin-top:14px;
   }
-  .cta p.big{margin:0 0 6px; font-size:16px; font-weight:700;}
-  .cta p.small{margin:0; font-size:12.5px; opacity:0.9;}
+  .cta p.big{margin:0 0 6px; font-size:17px; font-weight:800;}
+  .cta p.small{margin:0; font-size:12.5px; opacity:0.92;}
 
-  .footer{text-align:center; margin-top:22px; font-size:10px; color:var(--text-muted);}
+  .methodology{
+    margin-top:20px; padding:16px 20px; border:1px dashed var(--border); border-radius:12px;
+  }
+  .methodology p{font-size:11px; color:var(--text-muted); line-height:1.6; margin:0;}
+  .methodology strong{color:var(--text);}
+
+  .footer{text-align:center; margin-top:18px; font-size:10px; color:var(--text-muted);}
   .loading, .error{text-align:center; padding:80px 20px; color:var(--text-muted); font-size:14px;}
 </style>
 </head>
 <body>
 
+<div class="coverbar">
+  <div class="coverbar-inner" id="coverbar-inner">
+    <div class="brand">MASSATORII<span>.</span></div>
+    <div class="report-meta" id="report-meta"></div>
+  </div>
+</div>
+
 <div class="wrap" id="app">
-  <div class="loading">Cargando análisis...</div>
+  <div class="loading">Cargando informe...</div>
 </div>
 
 <script>
@@ -106,8 +138,35 @@ const SUPABASE_URL = "https://govlsomhnxhlgdkkxibd.supabase.co";
 const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdvdmxzb21obnhobGdka2t4aWJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2Nzg3NDUsImV4cCI6MjA5ODI1NDc0NX0.RUAaSS1sKSRWpBKsFcc8FH0iKZaoBBeG_bXVCSbWKSs";
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
+function veredicto(pct){
+  if(pct >= 30) return { label: 'Atención urgente', color: 'var(--red)', bg: 'rgba(215,52,39,0.18)',
+    headline: 'Estáis dejando pasar una parte considerable de los leads que os contactan — es una fuga real de ingresos, no un detalle menor.' };
+  if(pct >= 15) return { label: 'Mejorable', color: 'var(--gold)', bg: 'rgba(217,164,65,0.18)',
+    headline: 'Hay una parte de vuestros leads que se enfría antes de que alguien les responda — se puede cerrar ese hueco.' };
+  return { label: 'Buen nivel', color: 'var(--green)', bg: 'rgba(37,211,102,0.18)',
+    headline: 'Vuestra respuesta ya funciona razonablemente bien — el margen de mejora es sobre todo en cubrir los picos fuera de horario.' };
+}
+
+function resumenEjecutivo(nombreEmpresa, pct, desglose){
+  const factorPrincipal = desglose.slice().sort((a,b) => b.valor - a.valor)[0];
+  let frase1 = `Tras revisar la presencia pública de ${nombreEmpresa} — horario de atención, reseñas de clientes y su web — estimamos que un ${pct}% de los leads que os contactan podría estar perdiéndose por falta de respuesta a tiempo.`;
+  let frase2 = '';
+  if(factorPrincipal){
+    if(factorPrincipal.label.includes('Horario')){
+      frase2 = 'El factor que más pesa es la cobertura horaria: buena parte de la semana no hay nadie disponible para responder en el momento en que el lead está más interesado.';
+    } else if(factorPrincipal.label.includes('Reseñas')){
+      frase2 = 'El factor que más pesa son las propias reseñas de vuestros clientes, que mencionan directamente la falta de respuesta — es un patrón que otros ya han notado.';
+    } else if(factorPrincipal.label.includes('equipo') || factorPrincipal.label.includes('Equipo')){
+      frase2 = 'El factor que más pesa es el tamaño del equipo dedicado a atender leads, que parece limitado para el volumen que podríais estar recibiendo.';
+    } else {
+      frase2 = 'Es una situación habitual en el sector, y tiene una solución directa: cubrir esa ventana de respuesta sin añadir carga al equipo actual.';
+    }
+  }
+  return `${frase1} ${frase2}`;
+}
+
 function gaugeSVG(pct){
-  const size = 148, stroke = 13, r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  const size = 132, stroke = 12, r = (size - stroke) / 2, c = 2 * Math.PI * r;
   const offset = c - (pct / 100) * c;
   const color = pct >= 30 ? '#D73427' : pct >= 15 ? '#D9A441' : '#25D366';
   return `
@@ -116,39 +175,11 @@ function gaugeSVG(pct){
       <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}"
         stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round"
         transform="rotate(-90 ${size/2} ${size/2})"/>
-      <text x="50%" y="48%" text-anchor="middle" fill="#EDEFF3" font-size="30" font-weight="800" font-family="Space Grotesk">${pct}%</text>
-      <text x="50%" y="63%" text-anchor="middle" fill="#8A93A6" font-size="9.5" font-family="Space Grotesk">leads perdidos</text>
+      <text x="50%" y="48%" text-anchor="middle" fill="#EDEFF3" font-size="27" font-weight="800" font-family="Space Grotesk">${pct}%</text>
+      <text x="50%" y="64%" text-anchor="middle" fill="#8A93A6" font-size="8.5" font-family="Space Grotesk">estimado</text>
     </svg>
   `;
 }
-
-function parseFactores(texto){
-  // Extrae fragmentos legibles del texto técnico para listarlos como factores
-  const factores = [];
-  if(!texto) return factores;
-  if(/horario|abiertos de 168h/i.test(texto)){
-    const m = texto.match(/\(([\d.]+)h abiertos de 168h/);
-    factores.push({ tipo: m ? 'warn' : 'info', txt: 'Horario público con huecos sin cobertura de respuesta.' });
-  }
-  if(/quejas de respuesta detectadas|falta de respuesta/i.test(texto) && !/sin quejas/i.test(texto)){
-    factores.push({ tipo: 'danger', txt: 'Reseñas de clientes mencionando falta de respuesta.' });
-  } else if(/sin quejas de respuesta/i.test(texto)){
-    factores.push({ tipo: 'ok', txt: 'Sin quejas de respuesta en las reseñas públicas.' });
-  }
-  if(/rapidez de respuesta/i.test(texto)){
-    factores.push({ tipo: 'ok', txt: 'Clientes destacan la rapidez de respuesta actual.' });
-  }
-  if(/equipo de \d+ persona/i.test(texto)){
-    const m = texto.match(/equipo de (\d+) persona/i);
-    factores.push({ tipo: 'info', txt: `Equipo detectado: ${m[1]} persona(s) dedicadas.` });
-  }
-  if(/chat en vivo/i.test(texto)){
-    factores.push({ tipo: 'ok', txt: 'Ya cuentan con chat en vivo instalado en su web.' });
-  }
-  return factores;
-}
-
-const dotColor = { danger: 'var(--red)', warn: 'var(--gold)', ok: 'var(--green)', info: 'var(--blue)' };
 
 async function render(){
   const params = new URLSearchParams(window.location.search);
@@ -174,99 +205,74 @@ async function render(){
   const pct = data.auditoria_pct;
   const conMassatorii = Math.max(2, Math.round(pct * 0.08));
   const desglose = Array.isArray(data.auditoria_desglose) ? data.auditoria_desglose : [];
+  const v = veredicto(pct);
+  const fechaHoy = new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+
+  document.getElementById('report-meta').innerHTML = `Informe Nº ${String(id).padStart(5,'0')} · ${fechaHoy}`;
 
   app.innerHTML = `
-    <div class="topbar">
-      <div class="brand">MASSATORII<span>.</span></div>
-      <div class="badge-free">Análisis gratuito</div>
-    </div>
-
+    <p class="doc-title">Informe de análisis · Respuesta a leads</p>
     <div class="hero">
       <p class="empresa">${nombreEmpresa}</p>
       <p class="ciudad">${data.ciudad || ''}${data.sector ? ' · ' + (data.sector === 'legal' ? 'Sector legal' : 'Sector inmobiliario') : ''}</p>
     </div>
 
-    <div class="grid">
-      <div class="panel">
-        <p class="label">Estimación actual</p>
-        <div class="main-gauge">
-          ${gaugeSVG(pct)}
-          <p class="headline">de los leads que os escriben se podrían estar perdiendo por tardar en responder.</p>
-        </div>
+    <div class="verdict-panel">
+      ${gaugeSVG(pct)}
+      <div class="verdict-text">
+        <span class="verdict-badge" style="color:${v.color}; background:${v.bg};">${v.label}</span>
+        <p class="verdict-headline">${v.headline}</p>
       </div>
+    </div>
 
-      <div class="panel">
-        <p class="label" style="margin-bottom:14px;">Comparativa</p>
-        <div class="compare">
-          <div class="compare-row">
-            <span class="compare-label">Ahora mismo</span>
-            <div class="compare-bar-bg"><div class="compare-bar" style="width:${pct}%; background:var(--red);"></div></div>
-            <span class="compare-val" style="color:var(--red);">${pct}%</span>
+    <div class="summary-panel">
+      <p>${resumenEjecutivo(nombreEmpresa, pct, desglose)}</p>
+    </div>
+
+    <div class="panel" style="margin-bottom:14px;">
+      <p class="panel-title">Con un sistema de respuesta 24/7</p>
+      <div class="stat-row">
+        <div class="stat-mini"><p class="n">24/7</p><p class="l">Cobertura</p></div>
+        <div class="stat-mini"><p class="n">&lt;1min</p><p class="l">1ª respuesta</p></div>
+        <div class="stat-mini"><p class="n">${conMassatorii}%</p><p class="l">Pérdida estimada</p></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:14px;">
+      <p class="panel-title">Cómo se calcula el ${pct}%</p>
+      ${desglose.map(d => `
+        <div class="breakdown-row">
+          <div class="breakdown-icon" style="background:${d.valor > 0 ? 'rgba(215,52,39,0.18)' : d.valor < 0 ? 'rgba(37,211,102,0.18)' : 'rgba(76,141,255,0.18)'}; color:${d.valor > 0 ? 'var(--red)' : d.valor < 0 ? 'var(--green)' : 'var(--blue)'};">
+            ${d.valor > 0 ? '!' : d.valor < 0 ? '✓' : 'i'}
           </div>
-          <div class="compare-row">
-            <span class="compare-label">Con Massatorii</span>
-            <div class="compare-bar-bg"><div class="compare-bar" style="width:${conMassatorii}%; background:var(--green);"></div></div>
-            <span class="compare-val" style="color:var(--green);">${conMassatorii}%</span>
+          <div class="breakdown-body">
+            <div class="breakdown-head">
+              <span class="breakdown-label">${d.label}</span>
+              <span class="breakdown-val" style="color:${d.valor > 0 ? 'var(--red)' : d.valor < 0 ? 'var(--green)' : 'var(--text-muted)'};">${d.valor > 0 ? '+' : ''}${d.valor}%</span>
+            </div>
+            <div class="breakdown-detail">${d.detalle}</div>
           </div>
         </div>
-        <div class="stat-row" style="margin-top:16px;">
-          <div class="stat-mini">
-            <p class="n">24/7</p>
-            <p class="l">Respuesta</p>
-          </div>
-          <div class="stat-mini">
-            <p class="n">&lt;1min</p>
-            <p class="l">1ª respuesta</p>
-          </div>
-          <div class="stat-mini">
-            <p class="n">100%</p>
-            <p class="l">Leads cubiertos</p>
-          </div>
-        </div>
-      </div>
+      `).join('') || `<p style="font-size:13px; color:var(--text-muted);">${data.auditoria_texto || ''}</p>`}
+    </div>
 
-      <div class="panel panel-wide">
-        <p class="detalle-title">Por qué sale este ${pct}%</p>
-        <ul class="detalle-list">
-          ${desglose.map(d => `
-            <li>
-              <span class="dot" style="background:${d.valor > 0 ? 'var(--red)' : d.valor < 0 ? 'var(--green)' : 'var(--blue)'};"></span>
-              <div style="flex:1;">
-                <div style="display:flex; justify-content:space-between; gap:10px;">
-                  <span style="font-weight:600;">${d.label}</span>
-                  <span style="font-weight:700; color:${d.valor > 0 ? 'var(--red)' : d.valor < 0 ? 'var(--green)' : 'var(--text-muted)'}; flex-shrink:0;">${d.valor > 0 ? '+' : ''}${d.valor}%</span>
-                </div>
-                <span style="color:var(--text-muted); font-size:12px;">${d.detalle}</span>
-              </div>
-            </li>
-          `).join('') || `<li><span class="dot" style="background:var(--blue);"></span>${data.auditoria_texto || ''}</li>`}
-        </ul>
-      </div>
-
-      <div class="panel panel-wide">
-        <p class="detalle-title">Qué significa esto en clientes reales</p>
-        <p style="font-size:12px; color:var(--text-muted); margin:0 0 14px;">Estimación orientativa según cuántos leads recibáis al mes — buscad la fila más cercana a vuestro caso:</p>
-        <table style="width:100%; border-collapse:collapse; font-size:13px;">
-          <thead>
-            <tr style="border-bottom:1px solid var(--border);">
-              <th style="text-align:left; padding:8px 4px; color:var(--text-muted); font-weight:600; font-size:11px; text-transform:uppercase;">Leads/mes</th>
-              <th style="text-align:right; padding:8px 4px; color:var(--text-muted); font-weight:600; font-size:11px; text-transform:uppercase;">Se pierden ahora</th>
-              <th style="text-align:right; padding:8px 4px; color:var(--text-muted); font-weight:600; font-size:11px; text-transform:uppercase;">Con Massatorii</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${[30, 60, 100, 200].map(vol => {
-              const perdidosAhora = Math.round(vol * (pct/100));
-              const perdidosDespues = Math.round(vol * (conMassatorii/100));
-              return `<tr style="border-bottom:1px solid var(--border);">
-                <td style="padding:10px 4px; font-weight:600;">${vol}</td>
-                <td style="padding:10px 4px; text-align:right; color:var(--red); font-weight:700;">${perdidosAhora}</td>
-                <td style="padding:10px 4px; text-align:right; color:var(--green); font-weight:700;">${perdidosDespues}</td>
-              </tr>`;
-            }).join('')}
-          </tbody>
-        </table>
-      </div>
+    <div class="panel">
+      <p class="panel-title">Traducido a clientes reales</p>
+      <p style="font-size:12px; color:var(--text-muted); margin:0 0 12px;">Según cuántos leads recibáis al mes — buscad la fila más cercana a vuestro caso:</p>
+      <table class="clientes">
+        <thead><tr><th>Leads/mes</th><th>Se pierden ahora</th><th>Con Massatorii</th></tr></thead>
+        <tbody>
+          ${[30, 60, 100, 200].map(vol => {
+            const perdidosAhora = Math.round(vol * (pct/100));
+            const perdidosDespues = Math.round(vol * (conMassatorii/100));
+            return `<tr>
+              <td style="font-weight:600;">${vol}</td>
+              <td style="color:var(--red);">${perdidosAhora}</td>
+              <td style="color:var(--green);">${perdidosDespues}</td>
+            </tr>`;
+          }).join('')}
+        </tbody>
+      </table>
     </div>
 
     <div class="cta">
@@ -274,7 +280,11 @@ async function render(){
       <p class="small">Responde a este mismo chat de WhatsApp y lo vemos juntos, sin compromiso.</p>
     </div>
 
-    <div class="footer">Análisis basado en datos públicos (horario, reseñas y web de Google) · Massatorii</div>
+    <div class="methodology">
+      <p><strong>Metodología:</strong> este informe se genera automáticamente a partir de datos públicos de Google (horario de atención, reseñas de clientes verificadas y presencia web). Es una estimación orientativa, no una medición exacta de vuestro tráfico real.</p>
+    </div>
+
+    <div class="footer">Massatorii · Automatización de leads con IA</div>
   `;
 }
 
