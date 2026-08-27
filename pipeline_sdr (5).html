@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CRM — Massatorii</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --navy:#070C15;
+    --navy-2:#101929;
+    --navy-3:#182338;
+    --red:#D73427;
+    --green:#25D366;
+    --gold:#D9A441;
+    --text:#EDEFF3;
+    --text-muted:#8A93A6;
+    --border:#243350;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Space Grotesk', sans-serif;
+    background:var(--navy);
+    color:var(--text);
+    min-height:100vh;
+  }
+  header{
+    padding:20px 24px 0;
+    border-bottom:1px solid var(--border);
+  }
+  .header-top{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    flex-wrap:wrap;
+    gap:12px;
+    padding-bottom:14px;
+  }
+  header h1{
+    font-size:18px;
+    font-weight:700;
+    margin:0;
+    letter-spacing:0.5px;
+  }
+  header h1 span{color:var(--red);}
+  .header-actions{display:flex; gap:10px; align-items:center;}
+  .stat{
+    font-size:12px;
+    color:var(--text-muted);
+    background:var(--navy-2);
+    padding:6px 12px;
+    border-radius:20px;
+    border:1px solid var(--border);
+  }
+  button{font-family:inherit; cursor:pointer;}
+  #refresh{
+    background:var(--navy-2);
+    color:var(--text);
+    border:1px solid var(--border);
+    padding:8px 14px;
+    border-radius:8px;
+    font-size:13px;
+  }
+  #refresh:hover{border-color:var(--gold);}
+  #search{
+    background:var(--navy-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:8px 12px;
+    border-radius:8px;
+    font-size:13px;
+    font-family:inherit;
+    min-width:180px;
+  }
+  select#owner-filter{
+    background:var(--navy-2);
+    border:1px solid var(--border);
+    color:var(--text);
+    padding:8px 12px;
+    border-radius:8px;
+    font-size:13px;
+    font-family:inherit;
+  }
+  .stats-bar{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:10px;
+    padding:14px 24px;
+    border-bottom:1px solid var(--border);
+    background:var(--navy-2);
+  }
+  .stat-card{
+    background:var(--navy-3);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 14px;
+  }
+  .stat-card .stat-label{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color:var(--text-muted);
+    margin:0 0 4px;
+  }
+  .stat-card .stat-value{
+    font-size:22px;
+    font-weight:700;
+    margin:0;
+  }
+  .stat-card.hoy .stat-value{color:var(--gold);}
+  .stat-card.agendado .stat-value{color:var(--green);}
+  .stat-card.cerrado .stat-value{color:#639922;}
+  .stat-card.conversion .stat-value{color:#85B7EB;}
+  .tabs{display:flex; gap:4px;}
+  .tab-btn{
+    background:transparent;
+    border:none;
+    color:var(--text-muted);
+    padding:10px 4px;
+    font-size:13px;
+    font-weight:500;
+    border-bottom:2px solid transparent;
+    margin-right:20px;
+  }
+  .tab-btn.active{color:var(--text); border-bottom-color:var(--red);}
+  main{padding:20px 24px; overflow-x:auto; -webkit-overflow-scrolling:touch;}
+  @media (max-width: 640px){
+    main{padding:14px;}
+    #board{grid-auto-columns:82vw;}
+    .header-top{flex-direction:column; align-items:flex-start; gap:10px;}
+    .header-actions{flex-wrap:wrap;}
+  }
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* Board */
+  #board{
+    display:grid;
+    grid-auto-flow:column;
+    grid-auto-columns:260px;
+    gap:14px;
+    align-items:start;
+  }
+  .col{
+    background:var(--navy-2);
+    border-radius:12px;
+    border:1px solid var(--border);
+    padding:12px;
+    min-height:120px;
+  }
+  .col-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    margin-bottom:10px;
+    padding-bottom:8px;
+    border-bottom:2px solid var(--stage-color, var(--border));
+  }
+  .col-head h2{font-size:13px; font-weight:700; margin:0; text-transform:uppercase; letter-spacing:0.5px;}
+  .col-count{font-size:11px; color:var(--text-muted); background:var(--navy-3); padding:2px 8px; border-radius:10px;}
+  .card{
+    background:var(--navy-3);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:8px;
+    cursor:pointer;
+    transition:border-color 0.15s;
+  }
+  .card:hover{border-color:var(--gold);}
+  .card-name{font-size:13px; font-weight:700; margin:0 0 2px;}
+  .card-empresa{font-size:11px; color:var(--text-muted); margin:0 0 8px;}
+  .card-row{font-size:11px; color:var(--text-muted); margin-bottom:3px;}
+  .card-flag{
+    display:inline-block; font-size:10px; font-weight:700; color:var(--red);
+    margin-top:4px;
+  }
+  .empty-col{font-size:11px; color:var(--text-muted); text-align:center; padding:16px 4px;}
+  .pager{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:8px; padding-top:8px; border-top:1px solid var(--border);
+  }
+  .pager button{
+    background:var(--navy-3); color:var(--text); border:1px solid var(--border);
+    padding:4px 8px; border-radius:6px; font-size:11px;
+  }
+  .pager button:disabled{opacity:0.35; cursor:default;}
+  .pager span{font-size:11px; color:var(--text-muted);}
+
+  /* Seguimiento list view */
+  table{width:100%; border-collapse:collapse; font-size:13px;}
+  th{
+    text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.5px;
+    color:var(--text-muted); padding:8px 10px; border-bottom:1px solid var(--border);
+  }
+  td{padding:10px; border-bottom:1px solid var(--border); vertical-align:top;}
+  tr:hover td{background:var(--navy-2);}
+  tr{cursor:pointer;}
+  .badge{
+    font-size:10px; font-weight:700; padding:3px 8px; border-radius:10px;
+    display:inline-block;
+  }
+  .badge-overdue{background:rgba(215,52,39,0.2); color:#F0997B;}
+  .badge-today{background:rgba(217,164,65,0.2); color:var(--gold);}
+  .badge-upcoming{background:rgba(56,138,221,0.2); color:#85B7EB;}
+  .empty-state{text-align:center; padding:40px; color:var(--text-muted); font-size:13px;}
+
+  /* Modal */
+  #overlay{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.6);
+    z-index:50; align-items:center; justify-content:center; padding:20px;
+  }
+  #overlay.open{display:flex;}
+  #modal{
+    background:var(--navy-2); border:1px solid var(--border); border-radius:14px;
+    width:100%; max-width:440px; padding:22px; max-height:88vh; overflow-y:auto;
+  }
+  #modal h3{margin:0 0 4px; font-size:17px;}
+  #modal .sub{font-size:12px; color:var(--text-muted); margin:0 0 14px;}
+  .modal-tabs{display:flex; gap:0; border-bottom:1px solid var(--border); margin-bottom:16px;}
+  .modal-tab-btn{
+    background:transparent; border:none; color:var(--text-muted);
+    padding:8px 4px; margin-right:18px; font-size:13px; font-weight:500;
+    border-bottom:2px solid transparent;
+  }
+  .modal-tab-btn.active{color:var(--text); border-bottom-color:var(--gold);}
+  .modal-pane{display:none;}
+  .modal-pane.active{display:block;}
+  .field{margin-bottom:14px;}
+  .field label{
+    display:block; font-size:11px; color:var(--text-muted);
+    text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;
+  }
+  .field-value{
+    font-size:13px; padding:8px 10px; background:var(--navy-3);
+    border-radius:6px; border:1px solid var(--border);
+  }
+  select, textarea, input[type=text], input[type=date]{
+    width:100%; background:var(--navy-3); border:1px solid var(--border);
+    color:var(--text); padding:8px 10px; border-radius:6px;
+    font-family:inherit; font-size:13px;
+  }
+  textarea{resize:vertical; min-height:60px;}
+  .modal-actions{display:flex; gap:8px; margin-top:18px;}
+  .btn-primary{
+    background:var(--red); color:#fff; border:none; padding:10px 16px;
+    border-radius:8px; font-size:13px; font-weight:700; flex:1;
+  }
+  .btn-secondary{
+    background:transparent; color:var(--text-muted); border:1px solid var(--border);
+    padding:10px 16px; border-radius:8px; font-size:13px;
+  }
+  .quick-links{display:flex; gap:8px; margin-bottom:16px;}
+  .quick-links a{
+    flex:1; text-align:center; padding:8px; border-radius:8px; font-size:12px;
+    font-weight:700; text-decoration:none; border:1px solid var(--border);
+  }
+  .ql-call{color:var(--gold);} .ql-wa{color:var(--green);} .ql-mail{color:var(--text-muted);}
+  .historial-log{
+    max-height:160px; overflow-y:auto; margin-top:6px;
+    border:1px solid var(--border); border-radius:6px; padding:8px 10px;
+    background:var(--navy-3);
+  }
+  .historial-entry{font-size:12px; margin-bottom:8px; padding-bottom:8px; border-bottom:1px solid var(--border);}
+  .historial-entry:last-child{margin-bottom:0; border-bottom:none;}
+  .historial-date{color:var(--gold); font-size:10px; display:block; margin-bottom:2px;}
+  #toast{
+    position:fixed; bottom:20px; left:50%; transform:translateX(-50%);
+    background:var(--navy-3); border:1px solid var(--gold); color:var(--text);
+    padding:10px 18px; border-radius:8px; font-size:13px;
+    opacity:0; pointer-events:none; transition:opacity 0.2s; z-index:100;
+  }
+  #toast.show{opacity:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div style="display:flex; align-items:center; gap:16px;">
+      <h1 style="font-size:20px; font-weight:700; margin:0; letter-spacing:0.5px;">MASSATORII<span style="color:var(--red);">.</span></h1>
+      <span style="font-size:11px; font-weight:700; letter-spacing:2px; color:var(--text-muted); border-left:1px solid var(--border); padding-left:16px; text-transform:uppercase;">CRM Comercial</span>
+    </div>
+    <div class="header-actions">
+      <select id="owner-filter">
+        <option value="">Todos los SDR</option>
+      </select>
+      <button id="btn-soy" style="background:var(--navy-3); color:var(--gold); border:1px solid var(--gold); padding:8px 14px; border-radius:8px; font-size:13px;">Soy: <span id="soy-label">elegir</span></button>
+      <input id="search" type="text" placeholder="Buscar nombre o empresa...">
+      <span class="stat" id="stat-total">— contactos</span>
+      <button id="refresh">Actualizar</button>
+    </div>
+  </div>
+  <div class="tabs">
+    <button class="tab-btn active" data-view="tablero">Tablero</button>
+    <button class="tab-btn" data-view="seguimientos">Seguimientos <span id="badge-atrasados" style="display:none; background:var(--red); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span></button>
+    <button class="tab-btn" data-view="equipo">Resumen del equipo</button>
+  </div>
+</header>
+
+<div class="stats-bar">
+  <div class="stat-card">
+    <p class="stat-label">Pipeline total</p>
+    <p class="stat-value" id="s-total">0</p>
+  </div>
+  <div class="stat-card hoy">
+    <p class="stat-label">Contactados hoy</p>
+    <p class="stat-value" id="s-hoy">0</p>
+  </div>
+  <div class="stat-card agendado">
+    <p class="stat-label">Agendados</p>
+    <p class="stat-value" id="s-agendado">0</p>
+  </div>
+  <div class="stat-card cerrado">
+    <p class="stat-label">Cerrados</p>
+    <p class="stat-value" id="s-cerrado">0</p>
+  </div>
+  <div class="stat-card conversion">
+    <p class="stat-label">Conversión</p>
+    <p class="stat-value" id="s-conversion">0%</p>
+  </div>
+</div>
+
+<main>
+  <div id="view-tablero" class="view active">
+    <div id="board"><p style="font-size:13px; color:var(--text-muted); padding:20px;">Cargando contactos...</p></div>
+  </div>
+  <div id="view-seguimientos" class="view">
+    <table>
+      <thead>
+        <tr><th>Contacto</th><th>Empresa</th><th>Estado</th><th>Próximo seguimiento</th><th>Asignado</th></tr>
+      </thead>
+      <tbody id="seg-body"></tbody>
+    </table>
+    <div id="seg-empty" class="empty-state" style="display:none;">No hay seguimientos con fecha programada todavía. Abre un contacto y ponle una fecha en la pestaña Seguimiento.</div>
+    <div class="pager" id="seg-pager" style="display:none;"></div>
+  </div>
+
+  <div id="view-equipo" class="view">
+    <table>
+      <thead>
+        <tr><th>SDR</th><th>Total</th><th>Contactados hoy</th><th>Hablando</th><th>Agendados</th><th>Cerrados</th><th>Conversión</th></tr>
+      </thead>
+      <tbody id="equipo-body"></tbody>
+    </table>
+  </div>
+</main>
+
+<div id="overlay">
+  <div id="modal"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const SUPABASE_URL = "https://govlsomhnxhlgdkkxibd.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdvdmxzb21obnhobGdka2t4aWJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2Nzg3NDUsImV4cCI6MjA5ODI1NDc0NX0.RUAaSS1sKSRWpBKsFcc8FH0iKZaoBBeG_bXVCSbWKSs";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const AUDIT_FUNCTION_URL = "https://govlsomhnxhlgdkkxibd.supabase.co/functions/v1/audit-empresa";
+const AUDIT_APP_SECRET = "massatorii-crm-2026";
+
+const STAGES = [
+  {id:'pendiente',   label:'Pendiente',   color:'#8A93A6'},
+  {id:'contactado',  label:'Contactado',  color:'#D9A441'},
+  {id:'hablando',    label:'Hablando',    color:'#378ADD'},
+  {id:'agendado',    label:'Agendado',    color:'#25D366'},
+  {id:'cerrado',     label:'Cerrado',     color:'#639922'},
+  {id:'descartado',  label:'Descartado',  color:'#D73427'}
+];
+
+let contacts = [];
+let filterText = '';
+let filterOwner = '';
+let activeContact = null;
+let currentView = 'tablero';
+let modalTab = 'datos';
+const PAGE_SIZE = 20;
+let boardPage = {};
+let segPage = 1;
+
+async function loadContacts(){
+  const { data, error } = await sb.from('pipeline_manual').select('*').order('created_at', {ascending:true});
+  if(error){ showToast('Error cargando datos'); console.error(error); return; }
+  contacts = data || [];
+  populateOwnerFilter();
+  renderAll();
+  renderStats();
+}
+
+function setupRealtime(){
+  sb.channel('pipeline_manual_changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'pipeline_manual' }, () => {
+      loadContacts();
+    })
+    .subscribe();
+}
+
+function populateOwnerFilter(){
+  const sel = document.getElementById('owner-filter');
+  const owners = Array.from(new Set(contacts.map(c => (c.asignado_a || '').trim()).filter(Boolean))).sort();
+  sel.innerHTML = '<option value="">Todos los SDR</option>' +
+    '<option value="__sin_asignar__">Sin asignar</option>' +
+    owners.map(o => `<option value="${o}">${o}</option>`).join('');
+  if ([...sel.options].some(o => o.value === filterOwner)) sel.value = filterOwner;
+
+  let dl = document.getElementById('sdr-names');
+  if(!dl){
+    dl = document.createElement('datalist');
+    dl.id = 'sdr-names';
+    document.body.appendChild(dl);
+  }
+  dl.innerHTML = owners.map(o => `<option value="${o}">`).join('');
+}
+
+function getMyName(){ return localStorage.getItem('massatorii_sdr_nombre') || ''; }
+
+const ADMIN_NAMES = ['daniel', 'dani'];
+
+function isAdmin(){
+  return ADMIN_NAMES.includes(getMyName().trim().toLowerCase());
+}
+
+function updateAdminVisibility(){
+  const tabBtn = document.querySelector('.tab-btn[data-view="equipo"]');
+  if(tabBtn) tabBtn.style.display = isAdmin() ? '' : 'none';
+  if(!isAdmin() && currentView === 'equipo'){
+    currentView = 'tablero';
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-view')==='tablero'));
+    document.getElementById('view-tablero').classList.add('active');
+    document.getElementById('view-equipo').classList.remove('active');
+  }
+}
+
+function setupIdentity(){
+  const myName = getMyName();
+  document.getElementById('soy-label').textContent = myName || 'elegir';
+  if(myName) filterOwner = myName; // abre el CRM ya filtrado a tu propia lista
+  updateAdminVisibility();
+
+  document.getElementById('btn-soy').addEventListener('click', openIdentityModal);
+}
+
+function openIdentityModal(){
+  document.getElementById('modal').innerHTML = `
+    <h3>¿Quién eres?</h3>
+    <p class="sub">Así el CRM te muestra solo tus contactos asignados.</p>
+    <div class="field">
+      <label>Tu nombre</label>
+      <input type="text" id="f-mi-nombre" list="sdr-names" value="${getMyName()}" placeholder="ej. David">
+    </div>
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btn-close">Cancelar</button>
+      <button class="btn-primary" id="btn-guardar-nombre">Guardar</button>
+    </div>
+  `;
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('btn-close').addEventListener('click', closeModal);
+  document.getElementById('btn-guardar-nombre').addEventListener('click', () => {
+    const trimmed = document.getElementById('f-mi-nombre').value.trim();
+    localStorage.setItem('massatorii_sdr_nombre', trimmed);
+    document.getElementById('soy-label').textContent = trimmed || 'elegir';
+    filterOwner = trimmed;
+    document.getElementById('owner-filter').value = trimmed;
+    boardPage = {}; segPage = 1;
+    updateAdminVisibility();
+    closeModal();
+    renderAll();
+  });
+}
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+const NICHOS = {
+  inmobiliaria: { plural: 'inmobiliarias', posesivo: 'vuestra inmobiliaria', perdidos: 'leads' },
+  legal:        { plural: 'despachos de abogados', posesivo: 'vuestro despacho', perdidos: 'casos' }
+};
+
+function waLink(phone, empresa, asignado_a, sector, idioma){
+  if(!phone) return null;
+
+  if(idioma === 'en'){
+    const nicho_en = {
+      inmobiliaria: { plural: 'real estate agencies', posesivo: 'your agency', perdidos: 'leads' },
+      legal:        { plural: 'law firms', posesivo: 'your firm', perdidos: 'cases' }
+    }[(sector||'').toLowerCase()] || { plural: 'businesses like yours', posesivo: 'your business', perdidos: 'clients' };
+    const empresaEn = empresa || nicho_en.posesivo;
+    const presentacionEn = asignado_a ? `Hi! I'm ${asignado_a}, from Massatorii.` : `Hi! This is Massatorii.`;
+    const mensajeEn = `${presentacionEn} We help ${nicho_en.plural} stop losing ${nicho_en.perdidos} by responding too slowly. Would you like a free quick analysis of how many ${nicho_en.perdidos} you could be losing right now at ${empresaEn}?`;
+    return `https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(mensajeEn)}`;
+  }
+
+  const nicho = NICHOS[(sector||'').toLowerCase()] || { plural: 'negocios como el vuestro', posesivo: 'vuestro negocio', perdidos: 'clientes' };
+  const nombreEmpresa = empresa || nicho.posesivo;
+  const presentacion = asignado_a
+    ? `Hola! Soy ${asignado_a}, de Massatorii.`
+    : `Hola! Somos Massatorii.`;
+  const mensaje = `${presentacion} Ayudamos a ${nicho.plural} a no perder ${nicho.perdidos} por tardar en responder. ¿Os hacemos gratis un análisis de cuántos podríais estar perdiendo en ${nombreEmpresa}?`;
+  return `https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(mensaje)}`;
+}
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function renderAll(){
+  renderBoard();
+  renderSeguimientos();
+  renderStats();
+  renderEquipo();
+}
+
+function renderEquipo(){
+  const body = document.getElementById('equipo-body');
+  if(!body) return;
+  const today = todayStr();
+  const owners = Array.from(new Set(contacts.map(c => (c.asignado_a || '').trim()).filter(Boolean))).sort();
+
+  if(owners.length === 0){
+    body.innerHTML = `<tr><td colspan="7" style="color:var(--text-muted); text-align:center;">Sin datos todavía</td></tr>`;
+    return;
+  }
+
+  body.innerHTML = owners.map(owner => {
+    const mine = contacts.filter(c => (c.asignado_a || '').trim() === owner);
+    const total = mine.length;
+    const hoy = mine.filter(c => c.fecha_contacto && c.fecha_contacto.slice(0,10) === today).length;
+    const hablando = mine.filter(c => c.estado === 'hablando').length;
+    const agendados = mine.filter(c => c.estado === 'agendado').length;
+    const cerrados = mine.filter(c => c.estado === 'cerrado').length;
+    const contactadosTotal = mine.filter(c => (c.estado||'pendiente') !== 'pendiente').length;
+    const conversion = contactadosTotal > 0 ? Math.round((cerrados/contactadosTotal)*100) : 0;
+    return `<tr>
+      <td style="font-weight:700;">${owner}</td>
+      <td>${total}</td>
+      <td style="color:var(--gold);">${hoy}</td>
+      <td>${hablando}</td>
+      <td style="color:#25D366;">${agendados}</td>
+      <td style="color:#639922;">${cerrados}</td>
+      <td>${conversion}%</td>
+    </tr>`;
+  }).join('');
+}
+
+function filteredContacts(){
+  let list = contacts;
+  if(filterOwner === '__sin_asignar__'){
+    list = list.filter(c => !c.asignado_a || !c.asignado_a.trim());
+  } else if(filterOwner){
+    list = list.filter(c =>
+      (c.asignado_a || '').trim() === filterOwner ||
+      (c.closer_asignado || '').trim() === filterOwner
+    );
+  }
+  if(!filterText) return list;
+  const t = filterText.toLowerCase();
+  return list.filter(c => (c.nombre||'').toLowerCase().includes(t) || (c.empresa||'').toLowerCase().includes(t));
+}
+
+function renderStats(){
+  const list = filteredContacts();
+  const today = todayStr();
+
+  const total = list.length;
+  const hoy = list.filter(c => c.fecha_contacto && c.fecha_contacto.slice(0,10) === today).length;
+  const agendados = list.filter(c => c.estado === 'agendado').length;
+  const cerrados = list.filter(c => c.estado === 'cerrado').length;
+  const contactadosTotal = list.filter(c => (c.estado||'pendiente') !== 'pendiente').length;
+  const conversion = contactadosTotal > 0 ? Math.round((cerrados / contactadosTotal) * 100) : 0;
+
+  document.getElementById('s-total').textContent = total;
+  document.getElementById('s-hoy').textContent = hoy;
+  document.getElementById('s-agendado').textContent = agendados;
+  document.getElementById('s-cerrado').textContent = cerrados;
+  document.getElementById('s-conversion').textContent = conversion + '%';
+}
+
+function cardHTML(ct){
+  const overdue = ct.proximo_seguimiento && ct.proximo_seguimiento < todayStr();
+  const esComoCloser = filterOwner && filterOwner !== '__sin_asignar__' &&
+    (ct.closer_asignado || '').trim() === filterOwner &&
+    (ct.asignado_a || '').trim() !== filterOwner;
+  return `<div class="card" data-id="${ct.id}">
+    <p class="card-name">${ct.nombre}</p>
+    <p class="card-empresa">${ct.empresa || ''}${ct.ciudad ? ' · ' + ct.ciudad.split(',')[0] : ''}</p>
+    ${ct.telefono ? `<div class="card-row">${ct.telefono}</div>` : ''}
+    <div class="card-row">${ct.email || 'sin email'}</div>
+    ${esComoCloser ? `<span class="card-flag" style="color:var(--green);">Para cerrar · de ${ct.asignado_a}</span>` : ''}
+    ${overdue ? '<span class="card-flag">Seguimiento atrasado</span>' : ''}
+  </div>`;
+}
+
+function renderBoard(){
+  const board = document.getElementById('board');
+  const filtered = filteredContacts();
+  document.getElementById('stat-total').textContent = `${filtered.length} contactos`;
+
+  board.innerHTML = STAGES.map(stage => {
+    const items = filtered.filter(c => (c.estado || 'pendiente') === stage.id);
+    const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+    if(!boardPage[stage.id] || boardPage[stage.id] > totalPages) boardPage[stage.id] = 1;
+    const page = boardPage[stage.id];
+    const pageItems = items.slice((page-1)*PAGE_SIZE, page*PAGE_SIZE);
+
+    const pagerHTML = totalPages > 1 ? `<div class="pager">
+      <button class="page-prev" data-stage="${stage.id}" ${page<=1?'disabled':''}>‹</button>
+      <span>Página ${page} de ${totalPages}</span>
+      <button class="page-next" data-stage="${stage.id}" ${page>=totalPages?'disabled':''}>›</button>
+    </div>` : '';
+
+    return `<div class="col" style="--stage-color:${stage.color}">
+      <div class="col-head">
+        <h2 style="color:${stage.color}">${stage.label}</h2>
+        <span class="col-count">${items.length}</span>
+      </div>
+      ${pageItems.map(cardHTML).join('') || '<p class="empty-col">Vacío</p>'}
+      ${pagerHTML}
+    </div>`;
+  }).join('');
+
+  board.querySelectorAll('.card').forEach(card => {
+    card.addEventListener('click', () => openModal(card.getAttribute('data-id'), 'datos'));
+  });
+  board.querySelectorAll('.page-prev').forEach(btn => {
+    btn.addEventListener('click', () => { boardPage[btn.getAttribute('data-stage')]--; renderBoard(); });
+  });
+  board.querySelectorAll('.page-next').forEach(btn => {
+    btn.addEventListener('click', () => { boardPage[btn.getAttribute('data-stage')]++; renderBoard(); });
+  });
+}
+
+function renderSeguimientos(){
+  const body = document.getElementById('seg-body');
+  const pagerEl = document.getElementById('seg-pager');
+  const withDate = filteredContacts().filter(c => c.proximo_seguimiento).sort((a,b) => a.proximo_seguimiento.localeCompare(b.proximo_seguimiento));
+
+  const today = todayStr();
+  const overdueCount = withDate.filter(c => c.proximo_seguimiento < today).length;
+  const badge = document.getElementById('badge-atrasados');
+  if(overdueCount > 0){
+    badge.textContent = overdueCount;
+    badge.style.display = 'inline-block';
+  } else {
+    badge.style.display = 'none';
+  }
+
+  document.getElementById('seg-empty').style.display = withDate.length ? 'none' : 'block';
+
+  const totalPages = Math.max(1, Math.ceil(withDate.length / PAGE_SIZE));
+  if(segPage > totalPages) segPage = totalPages;
+  const pageItems = withDate.slice((segPage-1)*PAGE_SIZE, segPage*PAGE_SIZE);
+
+  body.innerHTML = pageItems.map(ct => {
+    const today = todayStr();
+    let badge = `<span class="badge badge-upcoming">${ct.proximo_seguimiento}</span>`;
+    if(ct.proximo_seguimiento < today) badge = `<span class="badge badge-overdue">Atrasado · ${ct.proximo_seguimiento}</span>`;
+    else if(ct.proximo_seguimiento === today) badge = `<span class="badge badge-today">Hoy</span>`;
+
+    const stage = STAGES.find(s => s.id === (ct.estado||'pendiente'));
+    return `<tr data-id="${ct.id}">
+      <td>${ct.nombre}</td>
+      <td>${ct.empresa || ''}</td>
+      <td><span style="color:${stage.color}">${stage.label}</span></td>
+      <td>${badge}</td>
+      <td>${ct.asignado_a || '—'}</td>
+    </tr>`;
+  }).join('');
+
+  body.querySelectorAll('tr').forEach(row => {
+    row.addEventListener('click', () => openModal(row.getAttribute('data-id'), 'seguimiento'));
+  });
+
+  if(totalPages > 1){
+    pagerEl.style.display = 'flex';
+    pagerEl.innerHTML = `
+      <button id="seg-prev" ${segPage<=1?'disabled':''}>‹ Anterior</button>
+      <span>Página ${segPage} de ${totalPages} · ${withDate.length} seguimientos</span>
+      <button id="seg-next" ${segPage>=totalPages?'disabled':''}>Siguiente ›</button>
+    `;
+    document.getElementById('seg-prev').addEventListener('click', () => { segPage--; renderSeguimientos(); });
+    document.getElementById('seg-next').addEventListener('click', () => { segPage++; renderSeguimientos(); });
+  } else {
+    pagerEl.style.display = 'none';
+  }
+}
+
+function openModal(id, tab){
+  activeContact = contacts.find(c => String(c.id) === String(id));
+  if(!activeContact) return;
+  modalTab = tab || 'datos';
+  const ct = activeContact;
+  const wa = waLink(ct.telefono, ct.empresa, ct.asignado_a, ct.sector, ct.idioma);
+
+  const historialEntries = (ct.historial || '').split('\n---\n').filter(Boolean);
+
+  document.getElementById('modal').innerHTML = `
+    <h3>${ct.nombre}</h3>
+    <p class="sub">${ct.cargo || ''}${ct.empresa ? ' · ' + ct.empresa : ''}</p>
+
+    <div class="quick-links">
+      ${ct.telefono ? `<a class="ql-call" href="tel:${ct.telefono.replace(/[^0-9+]/g,'')}">Llamar</a>` : ''}
+      ${wa ? `<a class="ql-wa" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+      ${ct.email ? `<a class="ql-mail" href="mailto:${ct.email}">Email</a>` : ''}
+    </div>
+
+    <div class="modal-tabs">
+      <button class="modal-tab-btn" data-mtab="datos">Datos y estado</button>
+      <button class="modal-tab-btn" data-mtab="seguimiento">Seguimiento</button>
+      <button class="modal-tab-btn" data-mtab="auditoria">Auditoría</button>
+    </div>
+
+    <div class="modal-pane" id="pane-datos">
+      <div class="field"><label>Teléfono</label><div class="field-value">${ct.telefono || 'No disponible'}</div></div>
+      <div class="field"><label>Email</label><div class="field-value">${ct.email || 'No disponible'}</div></div>
+      <div class="field"><label>Ciudad</label><div class="field-value">${ct.ciudad || '—'}</div></div>
+      <div class="field">
+        <label>Estado</label>
+        <select id="f-estado">
+          ${STAGES.map(s => `<option value="${s.id}" ${(ct.estado||'pendiente')===s.id?'selected':''}>${s.label}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field">
+        <label>Asignado a (SDR)</label>
+        <input type="text" id="f-asignado" list="sdr-names" value="${ct.asignado_a || ''}" placeholder="Nombre del SDR">
+      </div>
+      <div class="field">
+        <label>Closer asignado</label>
+        <input type="text" id="f-closer" list="sdr-names" value="${ct.closer_asignado || ''}" placeholder="Nombre del closer (cuando se agenda)">
+      </div>
+    </div>
+
+    <div class="modal-pane" id="pane-seguimiento">
+      <div class="field">
+        <label>Próxima fecha de seguimiento</label>
+        <input type="date" id="f-fecha" value="${ct.proximo_seguimiento || ''}">
+      </div>
+      <div class="field">
+        <label>Añadir nota al historial</label>
+        <textarea id="f-nota-nueva" placeholder="Qué se habló, próximos pasos..."></textarea>
+      </div>
+      ${historialEntries.length ? `<div class="field">
+        <label>Historial</label>
+        <div class="historial-log">
+          ${historialEntries.reverse().map(e => {
+            const [fecha, ...rest] = e.split('] ');
+            return `<div class="historial-entry"><span class="historial-date">${fecha.replace('[','')}</span>${rest.join('] ')}</div>`;
+          }).join('')}
+        </div>
+      </div>` : ''}
+    </div>
+
+    <div class="modal-pane" id="pane-auditoria">
+      <div id="auditoria-content">
+        ${ct.auditoria_pct != null ? `
+          <div class="field">
+            <label>Estimación de leads perdidos</label>
+            <p style="font-size:32px; font-weight:700; color:var(--red); margin:0 0 10px;">${ct.auditoria_pct}%</p>
+          </div>
+          <div class="field">
+            <label>Detalle (para tu explicación al cliente)</label>
+            <div class="field-value" style="line-height:1.5;">${ct.auditoria_texto || ''}</div>
+          </div>
+          <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">Solo compártelo si el cliente ya ha aceptado que le hagáis el análisis gratuito — no lo mandes de sopetón.</p>
+        ` : `
+          <p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:14px;">
+            Todavía no hay auditoría generada para este contacto.
+          </p>
+        `}
+      </div>
+      <button class="btn-secondary" id="btn-auditar" style="width:100%; margin-top:8px;">
+        ${ct.auditoria_pct != null ? 'Regenerar auditoría' : 'Generar auditoría ahora'}
+      </button>
+      <p id="auditoria-error" style="font-size:11px; color:var(--red); margin-top:8px; display:none;"></p>
+
+      ${ct.auditoria_pct != null ? `
+      <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+        <label style="display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
+          Calculadora en vivo (pregúntaselo en la llamada)
+        </label>
+        <div class="field">
+          <label>Leads que recibe al mes</label>
+          <input type="number" id="calc-leads" placeholder="ej. 60">
+        </div>
+        <div class="field">
+          <label>Ticket medio / comisión por cliente cerrado (€)</label>
+          <input type="number" id="calc-ticket" placeholder="ej. 2000">
+        </div>
+        <div class="field">
+          <label>Tasa de conversión lead → cliente (%) — si no lo sabe, deja 15</label>
+          <input type="number" id="calc-conversion" value="15">
+        </div>
+        <button class="btn-secondary" id="btn-calcular" style="width:100%;">Calcular pérdida estimada</button>
+        <div id="calc-resultado" style="margin-top:12px;"></div>
+      </div>
+      ` : ''}
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" id="btn-close">Cerrar</button>
+      <button class="btn-primary" id="btn-save">Guardar</button>
+    </div>
+  `;
+
+  document.getElementById('overlay').classList.add('open');
+  setModalTab(modalTab);
+  document.querySelectorAll('.modal-tab-btn').forEach(b => {
+    b.addEventListener('click', () => setModalTab(b.getAttribute('data-mtab')));
+  });
+  document.getElementById('btn-close').addEventListener('click', closeModal);
+  document.getElementById('btn-save').addEventListener('click', saveContact);
+  document.getElementById('btn-auditar').addEventListener('click', runAudit);
+  const btnCalc = document.getElementById('btn-calcular');
+  if(btnCalc) btnCalc.addEventListener('click', calcularPerdida);
+}
+
+function calcularPerdida(){
+  const leads = parseFloat(document.getElementById('calc-leads').value);
+  const ticket = parseFloat(document.getElementById('calc-ticket').value);
+  const conversion = parseFloat(document.getElementById('calc-conversion').value);
+  const pct = activeContact.auditoria_pct;
+  const resultEl = document.getElementById('calc-resultado');
+
+  if(!leads || !ticket || !conversion){
+    resultEl.innerHTML = `<p style="font-size:12px; color:var(--red);">Rellena los 3 campos para calcular.</p>`;
+    return;
+  }
+
+  const leadsPerdidos = leads * (pct/100);
+  const clientesPerdidos = leadsPerdidos * (conversion/100);
+  const eurosPerdidos = clientesPerdidos * ticket;
+
+  resultEl.innerHTML = `
+    <div style="background:var(--navy-3); border:1px solid var(--red); border-radius:10px; padding:14px;">
+      <p style="font-size:11px; color:var(--text-muted); margin:0 0 4px;">Estimación de pérdida mensual</p>
+      <p style="font-size:28px; font-weight:700; color:var(--red); margin:0 0 6px;">${eurosPerdidos.toLocaleString('es-ES', {maximumFractionDigits:0})} €/mes</p>
+      <p style="font-size:11px; color:var(--text-muted); margin:0;">
+        ≈ ${leadsPerdidos.toFixed(1)} leads perdidos/mes → ${clientesPerdidos.toFixed(1)} clientes perdidos/mes
+      </p>
+    </div>
+  `;
+}
+
+async function runAudit(){
+  if(!activeContact) return;
+  const btn = document.getElementById('btn-auditar');
+  const errorEl = document.getElementById('auditoria-error');
+  errorEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Consultando Google...';
+
+  const queryTexto = `${activeContact.empresa || activeContact.nombre} ${activeContact.ciudad || ''}`.trim();
+
+  try {
+    const res = await fetch(AUDIT_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-app-secret': AUDIT_APP_SECRET },
+      body: JSON.stringify({ query: queryTexto })
+    });
+    const data = await res.json();
+
+    if(!res.ok){
+      errorEl.textContent = data.error || 'No se pudo generar la auditoría.';
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Generar auditoría ahora';
+      return;
+    }
+
+    const { error } = await sb.from('pipeline_manual')
+      .update({ auditoria_pct: data.pct, auditoria_texto: data.texto })
+      .eq('id', activeContact.id);
+
+    if(error){
+      errorEl.textContent = 'Se generó pero no se pudo guardar. Inténtalo de nuevo.';
+      errorEl.style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = 'Generar auditoría ahora';
+      return;
+    }
+
+    activeContact.auditoria_pct = data.pct;
+    activeContact.auditoria_texto = data.texto;
+    document.getElementById('auditoria-content').innerHTML = `
+      <div class="field">
+        <label>Estimación de leads perdidos</label>
+        <p style="font-size:32px; font-weight:700; color:var(--red); margin:0 0 10px;">${data.pct}%</p>
+      </div>
+      <div class="field">
+        <label>Detalle (para tu explicación al cliente)</label>
+        <div class="field-value" style="line-height:1.5;">${data.texto}</div>
+      </div>
+      <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">Solo compártelo si el cliente ya ha aceptado que le hagáis el análisis gratuito — no lo mandes de sopetón.</p>
+    `;
+    btn.disabled = false;
+    btn.textContent = 'Regenerar auditoría';
+    showToast('Auditoría generada');
+    loadContacts();
+
+  } catch(e){
+    errorEl.textContent = 'Error de conexión. Inténtalo de nuevo.';
+    errorEl.style.display = 'block';
+    btn.disabled = false;
+    btn.textContent = 'Generar auditoría ahora';
+  }
+}
+
+function setModalTab(tab){
+  modalTab = tab;
+  document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-mtab')===tab));
+  document.getElementById('pane-datos').classList.toggle('active', tab==='datos');
+  document.getElementById('pane-seguimiento').classList.toggle('active', tab==='seguimiento');
+  document.getElementById('pane-auditoria').classList.toggle('active', tab==='auditoria');
+}
+
+function closeModal(){
+  document.getElementById('overlay').classList.remove('open');
+  activeContact = null;
+}
+
+async function saveContact(){
+  if(!activeContact) return;
+  const estado = document.getElementById('f-estado').value;
+  const asignado_a = document.getElementById('f-asignado').value;
+  const closer_asignado = document.getElementById('f-closer').value;
+  const proximo_seguimiento = document.getElementById('f-fecha').value || null;
+  const notaNueva = document.getElementById('f-nota-nueva').value.trim();
+
+  if((estado === 'hablando' || estado === 'agendado') && !proximo_seguimiento){
+    setModalTab('seguimiento');
+    showToast('Ponle fecha de próximo seguimiento antes de guardar');
+    document.getElementById('f-fecha').style.borderColor = 'var(--red)';
+    return;
+  }
+
+  if(estado === 'agendado' && !closer_asignado){
+    setModalTab('datos');
+    showToast('Pon quién cierra esta llamada antes de guardar');
+    document.getElementById('f-closer').style.borderColor = 'var(--red)';
+    return;
+  }
+
+  let historial = activeContact.historial || '';
+  if(notaNueva){
+    const stamp = new Date().toLocaleString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+    const entry = `[${stamp}] ${notaNueva}`;
+    historial = historial ? `${historial}\n---\n${entry}` : entry;
+  }
+
+  const { error } = await sb.from('pipeline_manual')
+    .update({ estado, asignado_a, closer_asignado, proximo_seguimiento, historial, fecha_contacto: new Date().toISOString() })
+    .eq('id', activeContact.id);
+
+  if(error){ showToast('Error al guardar'); console.error(error); return; }
+  showToast('Guardado');
+  closeModal();
+  loadContacts();
+}
+
+document.getElementById('overlay').addEventListener('click', (e) => { if(e.target.id === 'overlay') closeModal(); });
+document.getElementById('refresh').addEventListener('click', loadContacts);
+document.getElementById('search').addEventListener('input', (e) => { filterText = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
+document.getElementById('owner-filter').addEventListener('change', (e) => { filterOwner = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    currentView = btn.getAttribute('data-view');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b===btn));
+    document.getElementById('view-tablero').classList.toggle('active', currentView==='tablero');
+    document.getElementById('view-seguimientos').classList.toggle('active', currentView==='seguimientos');
+    document.getElementById('view-equipo').classList.toggle('active', currentView==='equipo');
+  });
+});
+
+setupIdentity();
+loadContacts();
+setupRealtime();
+</script>
+</body>
+</html>
