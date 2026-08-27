@@ -935,7 +935,12 @@ async function runAudit(){
     const res = await fetch(AUDIT_FUNCTION_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-app-secret': AUDIT_APP_SECRET },
-      body: JSON.stringify({ query: queryTexto })
+      body: JSON.stringify({
+        query: queryTexto,
+        empresa: activeContact.empresa,
+        nombre: activeContact.nombre,
+        ciudad: activeContact.ciudad
+      })
     });
     const data = await res.json();
 
