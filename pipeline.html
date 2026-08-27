@@ -815,6 +815,7 @@ function openModal(id, tab){
             <label>Detalle (para tu explicación al cliente)</label>
             <div class="field-value" style="line-height:1.5;">${ct.auditoria_texto || ''}</div>
           </div>
+          <button class="btn-secondary" id="btn-copiar-informe" style="width:100%; margin-top:6px;">Copiar link del informe para el cliente</button>
           <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">Solo compártelo si el cliente ya ha aceptado que le hagáis el análisis gratuito — no lo mandes de sopetón.</p>
         ` : `
           <p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:14px;">
@@ -864,6 +865,7 @@ function openModal(id, tab){
   document.getElementById('btn-close').addEventListener('click', closeModal);
   document.getElementById('btn-save').addEventListener('click', saveContact);
   document.getElementById('btn-auditar').addEventListener('click', runAudit);
+  wireCopiarInforme();
   const btnCalc = document.getElementById('btn-calcular');
   if(btnCalc) btnCalc.addEventListener('click', calcularPerdida);
 }
@@ -978,8 +980,10 @@ async function runAudit(){
         <label>Detalle (para tu explicación al cliente)</label>
         <div class="field-value" style="line-height:1.5;">${textoFinal}</div>
       </div>
+      <button class="btn-secondary" id="btn-copiar-informe" style="width:100%; margin-top:6px;">Copiar link del informe para el cliente</button>
       <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">Solo compártelo si el cliente ya ha aceptado que le hagáis el análisis gratuito — no lo mandes de sopetón.</p>
     `;
+    wireCopiarInforme();
     btn.disabled = false;
     btn.textContent = 'Regenerar auditoría';
     showToast('Auditoría generada');
@@ -991,6 +995,19 @@ async function runAudit(){
     btn.disabled = false;
     btn.textContent = 'Generar auditoría ahora';
   }
+}
+
+function wireCopiarInforme(){
+  const btnCopiar = document.getElementById('btn-copiar-informe');
+  if(!btnCopiar || !activeContact) return;
+  btnCopiar.addEventListener('click', () => {
+    const link = `https://danielruiz-ai.github.io/dashboard/informe.html?id=${activeContact.id}`;
+    navigator.clipboard.writeText(link).then(() => {
+      showToast('Link copiado');
+    }).catch(() => {
+      showToast('No se pudo copiar, cópialo a mano: ' + link);
+    });
+  });
 }
 
 function setModalTab(tab){
