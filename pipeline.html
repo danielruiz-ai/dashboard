@@ -790,13 +790,19 @@ function openModal(id, tab){
       <div id="auditoria-content">
         ${ct.auditoria_pct != null ? `
           <div class="field">
-            <label>Estimación de leads perdidos</label>
+            <label>Estimación inicial (pública, antes de hablar con el cliente)</label>
             <p style="font-size:32px; font-weight:700; color:var(--red); margin:0 0 10px;">${ct.auditoria_pct}%</p>
           </div>
           <div class="field">
             <label>Detalle (para tu explicación al cliente)</label>
             <div class="field-value" style="line-height:1.5;">${ct.auditoria_texto || ''}</div>
           </div>
+          ${ct.auditoria_pct_refinado != null ? `
+          <div class="field">
+            <label>Estimación refinada (con lo que te contó el cliente)</label>
+            <p style="font-size:32px; font-weight:700; color:var(--green); margin:0 0 10px;">${ct.auditoria_pct_refinado}%</p>
+          </div>
+          ` : ''}
           <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">Solo compártelo si el cliente ya ha aceptado que le hagáis el análisis gratuito — no lo mandes de sopetón.</p>
         ` : `
           <p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:14px;">
@@ -808,6 +814,27 @@ function openModal(id, tab){
         ${ct.auditoria_pct != null ? 'Regenerar auditoría' : 'Generar auditoría ahora'}
       </button>
       <p id="auditoria-error" style="font-size:11px; color:var(--red); margin-top:8px; display:none;"></p>
+
+      ${ct.auditoria_pct != null ? `
+      <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+        <label style="display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
+          Refinar con lo que te ha contado el cliente (pregúntalo en la llamada)
+        </label>
+        <div class="field">
+          <label>¿Cuántas personas dedican a atender leads/clientes potenciales?</label>
+          <input type="number" id="ref-personas" value="${ct.personas_dedicadas != null ? ct.personas_dedicadas : ''}" placeholder="ej. 1">
+        </div>
+        <div class="field">
+          <label>¿Esas personas hacen otras tareas además de atender leads?</label>
+          <select id="ref-tareas">
+            <option value="">Sin especificar</option>
+            <option value="si" ${ct.tareas_compartidas === true ? 'selected' : ''}>Sí, tienen más tareas</option>
+            <option value="no" ${ct.tareas_compartidas === false ? 'selected' : ''}>No, están 100% dedicadas</option>
+          </select>
+        </div>
+        <button class="btn-secondary" id="btn-refinar" style="width:100%;">Recalcular con esta info</button>
+      </div>
+      ` : ''}
 
       ${ct.auditoria_pct != null ? `
       <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
@@ -846,6 +873,8 @@ function openModal(id, tab){
   document.getElementById('btn-close').addEventListener('click', closeModal);
   document.getElementById('btn-save').addEventListener('click', saveContact);
   document.getElementById('btn-auditar').addEventListener('click', runAudit);
+  const btnRefinar = document.getElementById('btn-refinar');
+  if(btnRefinar) btnRefinar.addEventListener('click', refinarAuditoria);
   const btnCalc = document.getElementById('btn-calcular');
   if(btnCalc) btnCalc.addEventListener('click', calcularPerdida);
 }
@@ -875,6 +904,38 @@ function calcularPerdida(){
       </p>
     </div>
   `;
+}
+
+async function refinarAuditoria(){
+  if(!activeContact || activeContact.auditoria_pct == null) return;
+  const personasVal = document.getElementById('ref-personas').value;
+  const tareasVal = document.getElementById('ref-tareas').value;
+
+  const personas = personasVal !== '' ? parseInt(personasVal) : null;
+  const tareas_compartidas = tareasVal === 'si' ? true : tareasVal === 'no' ? false : null;
+
+  let pct = activeContact.auditoria_pct;
+
+  if(personas != null){
+    if(personas <= 1 && tareas_compartidas === true) pct += 12;
+    else if(personas <= 1 && tareas_compartidas === false) pct += 3;
+    else if(personas >= 2 && tareas_compartidas === true) pct += 5;
+    else if(personas >= 3 && tareas_compartidas === false) pct -= 8;
+  }
+  pct = Math.max(5, Math.min(45, pct));
+
+  const { error } = await sb.from('pipeline_manual')
+    .update({ personas_dedicadas: personas, tareas_compartidas, auditoria_pct_refinado: pct })
+    .eq('id', activeContact.id);
+
+  if(error){ showToast('Error al guardar'); console.error(error); return; }
+
+  activeContact.personas_dedicadas = personas;
+  activeContact.tareas_compartidas = tareas_compartidas;
+  activeContact.auditoria_pct_refinado = pct;
+  showToast('Auditoría refinada');
+  openModal(activeContact.id, 'auditoria');
+  loadContacts();
 }
 
 async function runAudit(){
