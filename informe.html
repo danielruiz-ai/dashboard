@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   :root{
     --navy:#070C15;
@@ -119,6 +118,32 @@
 
   .footer{text-align:center; margin-top:18px; font-size:10px; color:var(--text-muted);}
   .loading, .error{text-align:center; padding:80px 20px; color:var(--text-muted); font-size:14px;}
+
+  .no-print{display:block;}
+  @media print{
+    .no-print{display:none !important;}
+    *{-webkit-print-color-adjust:exact; print-color-adjust:exact;}
+    body{background:#fff !important; color:#111 !important; padding:0;}
+    .coverbar{background:#fff !important; border-bottom:2px solid #111;}
+    .brand{color:#111 !important;}
+    .doc-title{color:#B8860B !important;}
+    .hero .empresa{color:#111 !important;}
+    .hero .ciudad, .report-meta{color:#555 !important;}
+    .verdict-panel, .summary-panel, .panel{
+      background:#fff !important; border:1px solid #ccc !important;
+      break-inside:avoid; page-break-inside:avoid;
+    }
+    .verdict-headline, .breakdown-label, .panel-title, .summary-panel p{color:#111 !important;}
+    .breakdown-detail{color:#444 !important;}
+    .stat-mini{background:#f2f2f2 !important;}
+    .stat-mini .n{color:#111 !important;}
+    table.clientes td{color:#111 !important;}
+    table.clientes th{color:#555 !important;}
+    .cta{break-inside:avoid;}
+    .methodology{border-color:#ccc !important;}
+    .methodology p{color:#555 !important;}
+    .breakdown-row{break-inside:avoid;}
+  }
 </style>
 </head>
 <body>
@@ -285,32 +310,16 @@ async function render(){
       <p><strong>Metodología:</strong> este informe se genera automáticamente a partir de datos públicos de Google (horario de atención, reseñas de clientes verificadas y presencia web). Es una estimación orientativa, no una medición exacta de vuestro tráfico real.</p>
     </div>
 
-    <button id="btn-download-pdf" style="width:100%; margin-top:16px; background:var(--navy-4); color:var(--text); border:1px solid var(--border); padding:14px; border-radius:12px; font-size:13px; font-weight:700; font-family:'Space Grotesk', sans-serif; cursor:pointer;">
+    <button id="btn-download-pdf" class="no-print" style="width:100%; margin-top:16px; background:var(--navy-4); color:var(--text); border:1px solid var(--border); padding:14px; border-radius:12px; font-size:13px; font-weight:700; font-family:'Space Grotesk', sans-serif; cursor:pointer;">
       Descargar informe en PDF
     </button>
+    <p class="no-print" style="text-align:center; font-size:10.5px; color:var(--text-muted); margin-top:8px;">Se abre el cuadro de impresión — elige "Guardar como PDF" como destino.</p>
 
     <div class="footer">Massatorii · Automatización de leads con IA</div>
   `;
 
   document.getElementById('btn-download-pdf').addEventListener('click', () => {
-    const btn = document.getElementById('btn-download-pdf');
-    btn.textContent = 'Generando PDF...';
-    btn.disabled = true;
-    const elemento = document.getElementById('app');
-    const opciones = {
-      margin: 8,
-      filename: `analisis-massatorii-${(nombreEmpresa || 'informe').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
-      image: { type: 'jpeg', quality: 0.98 },
-      html2canvas: { scale: 2, backgroundColor: '#070C15' },
-      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-    };
-    html2pdf().set(opciones).from(elemento).save().then(() => {
-      btn.textContent = 'Descargar informe en PDF';
-      btn.disabled = false;
-    }).catch(() => {
-      btn.textContent = 'Descargar informe en PDF';
-      btn.disabled = false;
-    });
+    window.print();
   });
 }
 
