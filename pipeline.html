@@ -570,13 +570,13 @@ function applyLangStatic(){
 }
 
 function setupLangToggle(){
-  applyLangStatic();
   document.getElementById('btn-lang').addEventListener('click', () => {
     LANG = LANG === 'es' ? 'en' : 'es';
     localStorage.setItem('massatorii_lang', LANG);
-    applyLangStatic();
+    try { applyLangStatic(); } catch(e) { console.error('applyLangStatic error:', e); }
     renderAll();
   });
+  try { applyLangStatic(); } catch(e) { console.error('applyLangStatic error:', e); }
 }
 
 function setupIdentity(){
