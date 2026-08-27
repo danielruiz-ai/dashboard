@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
   :root{
     --navy:#070C15;
@@ -284,8 +285,33 @@ async function render(){
       <p><strong>Metodología:</strong> este informe se genera automáticamente a partir de datos públicos de Google (horario de atención, reseñas de clientes verificadas y presencia web). Es una estimación orientativa, no una medición exacta de vuestro tráfico real.</p>
     </div>
 
+    <button id="btn-download-pdf" style="width:100%; margin-top:16px; background:var(--navy-4); color:var(--text); border:1px solid var(--border); padding:14px; border-radius:12px; font-size:13px; font-weight:700; font-family:'Space Grotesk', sans-serif; cursor:pointer;">
+      Descargar informe en PDF
+    </button>
+
     <div class="footer">Massatorii · Automatización de leads con IA</div>
   `;
+
+  document.getElementById('btn-download-pdf').addEventListener('click', () => {
+    const btn = document.getElementById('btn-download-pdf');
+    btn.textContent = 'Generando PDF...';
+    btn.disabled = true;
+    const elemento = document.getElementById('app');
+    const opciones = {
+      margin: 8,
+      filename: `analisis-massatorii-${(nombreEmpresa || 'informe').toLowerCase().replace(/[^a-z0-9]+/g, '-')}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, backgroundColor: '#070C15' },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    html2pdf().set(opciones).from(elemento).save().then(() => {
+      btn.textContent = 'Descargar informe en PDF';
+      btn.disabled = false;
+    }).catch(() => {
+      btn.textContent = 'Descargar informe en PDF';
+      btn.disabled = false;
+    });
+  });
 }
 
 render();
