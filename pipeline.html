@@ -286,57 +286,61 @@
     </div>
     <div class="header-actions">
       <select id="owner-filter">
-        <option value="">Todos los SDR</option>
+        <option value="" id="opt-todos-sdr">Todos los SDR</option>
       </select>
       <select id="phone-filter">
-        <option value="">Todos los números</option>
-        <option value="movil">Solo con WhatsApp</option>
-        <option value="fijo">Solo fijo (llamar)</option>
+        <option value="" id="opt-todos-numeros">Todos los números</option>
+        <option value="movil" id="opt-solo-movil">Solo con WhatsApp</option>
+        <option value="fijo" id="opt-solo-fijo">Solo fijo (llamar)</option>
       </select>
-      <button id="btn-soy" style="background:var(--navy-3); color:var(--gold); border:1px solid var(--gold); padding:8px 14px; border-radius:8px; font-size:13px;">Soy: <span id="soy-label">elegir</span></button>
+      <button id="btn-lang" style="background:var(--navy-3); color:var(--text); border:1px solid var(--border); padding:8px 12px; border-radius:8px; font-size:13px; font-weight:700;">EN/ES</button>
+      <button id="btn-soy" style="background:var(--navy-3); color:var(--gold); border:1px solid var(--gold); padding:8px 14px; border-radius:8px; font-size:13px;"><span id="soy-word">Soy:</span> <span id="soy-label">elegir</span></button>
       <input id="search" type="text" placeholder="Buscar nombre o empresa...">
       <span class="stat" id="stat-total">— contactos</span>
       <button id="refresh">Actualizar</button>
     </div>
   </div>
   <div class="tabs">
-    <button class="tab-btn active" data-view="tablero">Tablero</button>
-    <button class="tab-btn" data-view="seguimientos">Seguimientos <span id="badge-atrasados" style="display:none; background:var(--red); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span></button>
-    <button class="tab-btn" data-view="equipo">Resumen del equipo</button>
+    <button class="tab-btn active" data-view="tablero" id="tab-tablero">Tablero</button>
+    <button class="tab-btn" data-view="seguimientos" id="tab-seguimientos">Seguimientos <span id="badge-atrasados" style="display:none; background:var(--red); color:#fff; font-size:10px; font-weight:700; padding:1px 6px; border-radius:10px; margin-left:4px;"></span></button>
+    <button class="tab-btn" data-view="equipo" id="tab-equipo">Resumen del equipo</button>
   </div>
 </header>
 
 <div class="stats-bar">
   <div class="stat-card">
-    <p class="stat-label">Pipeline total</p>
+    <p class="stat-label" id="lbl-total">Pipeline total</p>
     <p class="stat-value" id="s-total">0</p>
   </div>
   <div class="stat-card hoy">
-    <p class="stat-label">Contactados hoy</p>
+    <p class="stat-label" id="lbl-hoy">Contactados hoy</p>
     <p class="stat-value" id="s-hoy">0</p>
   </div>
   <div class="stat-card agendado">
-    <p class="stat-label">Agendados</p>
+    <p class="stat-label" id="lbl-agendados">Agendados</p>
     <p class="stat-value" id="s-agendado">0</p>
   </div>
   <div class="stat-card cerrado">
-    <p class="stat-label">Cerrados</p>
+    <p class="stat-label" id="lbl-cerrados">Cerrados</p>
     <p class="stat-value" id="s-cerrado">0</p>
   </div>
   <div class="stat-card conversion">
-    <p class="stat-label">Conversión</p>
+    <p class="stat-label" id="lbl-conversion">Conversión</p>
     <p class="stat-value" id="s-conversion">0%</p>
   </div>
 </div>
 
 <main>
   <div id="view-tablero" class="view active">
-    <div id="board"><p style="font-size:13px; color:var(--text-muted); padding:20px;">Cargando contactos...</p></div>
+    <div id="board"><p style="font-size:13px; color:var(--text-muted); padding:20px;" id="loading-msg">Cargando contactos...</p></div>
   </div>
   <div id="view-seguimientos" class="view">
     <table>
       <thead>
-        <tr><th>Contacto</th><th>Empresa</th><th>Estado</th><th>Próximo seguimiento</th><th>Asignado</th></tr>
+        <tr>
+          <th id="th-contacto">Contacto</th><th id="th-empresa">Empresa</th><th id="th-estado">Estado</th>
+          <th id="th-proximo">Próximo seguimiento</th><th id="th-asignado">Asignado</th>
+        </tr>
       </thead>
       <tbody id="seg-body"></tbody>
     </table>
@@ -347,7 +351,7 @@
   <div id="view-equipo" class="view">
     <table>
       <thead>
-        <tr><th>SDR</th><th>Total</th><th>Contactados hoy</th><th>Hablando</th><th>Agendados</th><th>Cerrados</th><th>Conversión</th></tr>
+        <tr id="equipo-header-row"><th>SDR</th><th>Total</th><th>Contactados hoy</th><th>Hablando</th><th>Agendados</th><th>Cerrados</th><th>Conversión</th></tr>
       </thead>
       <tbody id="equipo-body"></tbody>
     </table>
@@ -368,19 +372,117 @@ const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const AUDIT_FUNCTION_URL = "https://govlsomhnxhlgdkkxibd.supabase.co/functions/v1/audit-empresa";
 const AUDIT_APP_SECRET = "massatorii-crm-2026";
 
-const STAGES = [
-  {id:'pendiente',   label:'Pendiente',   color:'#8A93A6'},
-  {id:'contactado',  label:'Contactado',  color:'#D9A441'},
-  {id:'hablando',    label:'Hablando',    color:'#378ADD'},
-  {id:'agendado',    label:'Agendado',    color:'#25D366'},
-  {id:'cerrado',     label:'Cerrado',     color:'#639922'},
-  {id:'descartado',  label:'Descartado',  color:'#D73427'}
+const STAGES_BASE = [
+  {id:'pendiente',   key:'stage_pendiente',   color:'#8A93A6'},
+  {id:'contactado',  key:'stage_contactado',  color:'#D9A441'},
+  {id:'hablando',    key:'stage_hablando',    color:'#378ADD'},
+  {id:'agendado',    key:'stage_agendado',    color:'#25D366'},
+  {id:'cerrado',     key:'stage_cerrado',     color:'#639922'},
+  {id:'descartado',  key:'stage_descartado',  color:'#D73427'}
 ];
+function getStages(){
+  return STAGES_BASE.map(s => ({ id: s.id, color: s.color, label: t(s.key) }));
+}
 
 let contacts = [];
 let filterText = '';
 let filterOwner = '';
 let filterPhone = '';
+let LANG = localStorage.getItem('massatorii_lang') || 'es';
+
+const STR = {
+  es: {
+    todos_sdr: 'Todos los SDR', sin_asignar: 'Sin asignar',
+    todos_numeros: 'Todos los números', solo_movil: 'Solo con WhatsApp', solo_fijo: 'Solo fijo (llamar)',
+    soy: 'Soy:', elegir: 'elegir', buscar_ph: 'Buscar nombre o empresa...', actualizar: 'Actualizar',
+    tab_tablero: 'Tablero', tab_seguimientos: 'Seguimientos', tab_equipo: 'Resumen del equipo',
+    stat_total: 'Pipeline total', stat_hoy: 'Contactados hoy', stat_agendados: 'Agendados',
+    stat_cerrados: 'Cerrados', stat_conversion: 'Conversión',
+    stage_pendiente: 'Pendiente', stage_contactado: 'Contactado', stage_hablando: 'Hablando',
+    stage_agendado: 'Agendado', stage_cerrado: 'Cerrado', stage_descartado: 'Descartado',
+    vacio: 'Vacío', pagina: 'Página', de: 'de', contactos: 'contactos', seguimientos_word: 'seguimientos',
+    col_contacto: 'Contacto', col_empresa: 'Empresa', col_estado: 'Estado', col_proximo: 'Próximo seguimiento', col_asignado: 'Asignado',
+    sin_seguimientos: 'No hay seguimientos con fecha programada todavía. Abre un contacto y ponle una fecha en la pestaña Seguimiento.',
+    anterior: '‹ Anterior', siguiente: 'Siguiente ›', atrasado: 'Atrasado', hoy_badge: 'Hoy',
+    equipo_headers: ['SDR','Total','Contactados hoy','Hablando','Agendados','Cerrados','Conversión'],
+    sin_datos: 'Sin datos todavía',
+    modal_datos: 'Datos y estado', modal_seguimiento: 'Seguimiento', modal_auditoria: 'Auditoría',
+    telefono: 'Teléfono', no_disponible: 'No disponible', email: 'Email', ciudad: 'Ciudad',
+    estado_lbl: 'Estado', asignado_sdr: 'Asignado a (SDR)', nombre_sdr_ph: 'Nombre del SDR',
+    closer_asignado: 'Closer asignado', closer_ph: 'Nombre del closer (cuando se agenda)',
+    llamar: 'Llamar', whatsapp: 'WhatsApp', fijo_sin_wa: 'Fijo, sin WA', sin_email: 'sin email',
+    proxima_fecha: 'Próxima fecha de seguimiento', anadir_nota: 'Añadir nota al historial',
+    nota_ph: 'Qué se habló, próximos pasos...', historial_lbl: 'Historial',
+    cerrar: 'Cerrar', guardar: 'Guardar', quien_eres: '¿Quién eres?',
+    quien_eres_sub: 'Así el CRM te muestra solo tus contactos asignados.', tu_nombre: 'Tu nombre',
+    cancelar: 'Cancelar', para_cerrar_de: 'Para cerrar · de', seguimiento_atrasado: 'Seguimiento atrasado',
+    aviso_no_generada: 'Todavía no hay auditoría generada para este contacto. Si ya tienes las respuestas de arriba, se sumarán automáticamente al generar.',
+    generar_auditoria: 'Generar auditoría ahora', regenerar_auditoria: 'Regenerar auditoría',
+    estimacion_perdidos: 'Estimación de leads perdidos', detalle_cliente: 'Detalle (para tu explicación al cliente)',
+    solo_compartelo: 'Solo compártelo si el cliente ya ha aceptado que le hagáis el análisis gratuito — no lo mandes de sopetón.',
+    copiar_informe: 'Copiar link del informe para el cliente', link_copiado: 'Link copiado',
+    aviso_sdr_titulo: '⚠ Solo para ti, no es para el cliente',
+    preguntas_detectado: 'Tamaño de equipo detectado automáticamente',
+    equipo_detectado_txt: 'persona(s), según su web — no hace falta preguntarlo.',
+    preguntas_no_detectado: 'No lo detectamos solos — si surge en la conversación, mételo aquí',
+    cuantas_personas: '¿Cuántas personas dedican a atender leads/clientes potenciales?',
+    tareas_pregunta: '¿Esas personas hacen otras tareas además de atender leads?',
+    sin_especificar: 'Sin especificar', tareas_si: 'Sí, tienen más tareas', tareas_no: 'No, están 100% dedicadas',
+    tareas_nota: 'No hace falta preguntarlo en frío — solo si sale de forma natural en la llamada.',
+    calc_titulo: 'Calculadora en vivo (pregúntaselo en la llamada)', leads_mes: 'Leads que recibe al mes',
+    ticket_medio: 'Ticket medio / comisión por cliente cerrado (€)', tasa_conv: 'Tasa de conversión lead → cliente (%) — si no lo sabe, deja 15',
+    calcular_perdida: 'Calcular pérdida estimada', perdida_estimada: 'Estimación de pérdida mensual',
+    guardado: 'Guardado', error_guardar: 'Error al guardar', pon_fecha: 'Ponle fecha de próximo seguimiento antes de guardar',
+    pon_closer: 'Pon quién cierra esta llamada antes de guardar', rellena_campos: 'Rellena los 3 campos para calcular.',
+  },
+  en: {
+    todos_sdr: 'All SDRs', sin_asignar: 'Unassigned',
+    todos_numeros: 'All numbers', solo_movil: 'WhatsApp-capable only', solo_fijo: 'Landline only (call)',
+    soy: "I'm:", elegir: 'choose', buscar_ph: 'Search name or company...', actualizar: 'Refresh',
+    tab_tablero: 'Board', tab_seguimientos: 'Follow-ups', tab_equipo: 'Team summary',
+    stat_total: 'Total pipeline', stat_hoy: 'Contacted today', stat_agendados: 'Booked',
+    stat_cerrados: 'Closed', stat_conversion: 'Conversion',
+    stage_pendiente: 'Pending', stage_contactado: 'Contacted', stage_hablando: 'Talking',
+    stage_agendado: 'Booked', stage_cerrado: 'Closed', stage_descartado: 'Discarded',
+    vacio: 'Empty', pagina: 'Page', de: 'of', contactos: 'contacts', seguimientos_word: 'follow-ups',
+    col_contacto: 'Contact', col_empresa: 'Company', col_estado: 'Status', col_proximo: 'Next follow-up', col_asignado: 'Assigned',
+    sin_seguimientos: 'No follow-ups scheduled yet. Open a contact and set a date in the Follow-up tab.',
+    anterior: '‹ Previous', siguiente: 'Next ›', atrasado: 'Overdue', hoy_badge: 'Today',
+    equipo_headers: ['SDR','Total','Contacted today','Talking','Booked','Closed','Conversion'],
+    sin_datos: 'No data yet',
+    modal_datos: 'Data & status', modal_seguimiento: 'Follow-up', modal_auditoria: 'Audit',
+    telefono: 'Phone', no_disponible: 'Not available', email: 'Email', ciudad: 'City',
+    estado_lbl: 'Status', asignado_sdr: 'Assigned to (SDR)', nombre_sdr_ph: "SDR's name",
+    closer_asignado: 'Closer assigned', closer_ph: "Closer's name (once booked)",
+    llamar: 'Call', whatsapp: 'WhatsApp', fijo_sin_wa: 'Landline, no WA', sin_email: 'no email',
+    proxima_fecha: 'Next follow-up date', anadir_nota: 'Add note to history',
+    nota_ph: 'What was discussed, next steps...', historial_lbl: 'History',
+    cerrar: 'Close', guardar: 'Save', quien_eres: 'Who are you?',
+    quien_eres_sub: 'This way the CRM only shows your assigned contacts.', tu_nombre: 'Your name',
+    cancelar: 'Cancel', para_cerrar_de: 'To close · from', seguimiento_atrasado: 'Follow-up overdue',
+    aviso_no_generada: "No audit generated for this contact yet. If you already have the answers above, they'll be added automatically when generated.",
+    generar_auditoria: 'Generate audit now', regenerar_auditoria: 'Regenerate audit',
+    estimacion_perdidos: 'Estimated lost leads', detalle_cliente: 'Details (to explain to the client)',
+    solo_compartelo: "Only share this once the client has agreed to the free analysis — don't send it out of the blue.",
+    copiar_informe: 'Copy report link for the client', link_copiado: 'Link copied',
+    aviso_sdr_titulo: '⚠ For you only, not for the client',
+    preguntas_detectado: 'Team size auto-detected',
+    equipo_detectado_txt: "people, according to their website — no need to ask.",
+    preguntas_no_detectado: "We couldn't detect it automatically — if it comes up in the call, add it here",
+    cuantas_personas: 'How many people handle incoming leads/potential clients?',
+    tareas_pregunta: 'Do those people also handle other tasks besides leads?',
+    sin_especificar: 'Not specified', tareas_si: 'Yes, they have other tasks', tareas_no: "No, they're 100% dedicated",
+    tareas_nota: "No need to ask this cold — only if it comes up naturally in the call.",
+    calc_titulo: 'Live calculator (ask this on the call)', leads_mes: 'Leads received per month',
+    ticket_medio: 'Average ticket / commission per closed client (€)', tasa_conv: 'Lead → client conversion rate (%) — leave at 15 if unknown',
+    calcular_perdida: 'Calculate estimated loss', perdida_estimada: 'Estimated monthly loss',
+    guardado: 'Saved', error_guardar: 'Error saving', pon_fecha: 'Set a next follow-up date before saving',
+    pon_closer: 'Set who is closing this call before saving', rellena_campos: 'Fill in all 3 fields to calculate.',
+  }
+};
+
+function t(key){ return (STR[LANG] && STR[LANG][key]) || STR.es[key] || key; }
+
 let activeContact = null;
 let currentView = 'tablero';
 let modalTab = 'datos';
@@ -441,6 +543,42 @@ function updateAdminVisibility(){
   }
 }
 
+function applyLangStatic(){
+  document.getElementById('opt-todos-sdr').textContent = t('todos_sdr');
+  document.getElementById('opt-todos-numeros').textContent = t('todos_numeros');
+  document.getElementById('opt-solo-movil').textContent = t('solo_movil');
+  document.getElementById('opt-solo-fijo').textContent = t('solo_fijo');
+  document.getElementById('soy-word').textContent = t('soy');
+  document.getElementById('search').placeholder = t('buscar_ph');
+  document.getElementById('refresh').textContent = t('actualizar');
+  document.getElementById('tab-tablero').childNodes[0].textContent = t('tab_tablero') + ' ';
+  document.getElementById('tab-seguimientos').childNodes[0].textContent = t('tab_seguimientos') + ' ';
+  document.getElementById('tab-equipo').childNodes[0].textContent = t('tab_equipo') + ' ';
+  document.getElementById('lbl-total').textContent = t('stat_total');
+  document.getElementById('lbl-hoy').textContent = t('stat_hoy');
+  document.getElementById('lbl-agendados').textContent = t('stat_agendados');
+  document.getElementById('lbl-cerrados').textContent = t('stat_cerrados');
+  document.getElementById('lbl-conversion').textContent = t('stat_conversion');
+  document.getElementById('th-contacto').textContent = t('col_contacto');
+  document.getElementById('th-empresa').textContent = t('col_empresa');
+  document.getElementById('th-estado').textContent = t('col_estado');
+  document.getElementById('th-proximo').textContent = t('col_proximo');
+  document.getElementById('th-asignado').textContent = t('col_asignado');
+  document.getElementById('seg-empty').textContent = t('sin_seguimientos');
+  const eqRow = document.getElementById('equipo-header-row');
+  if(eqRow) eqRow.innerHTML = t('equipo_headers').map(h => `<th>${h}</th>`).join('');
+}
+
+function setupLangToggle(){
+  applyLangStatic();
+  document.getElementById('btn-lang').addEventListener('click', () => {
+    LANG = LANG === 'es' ? 'en' : 'es';
+    localStorage.setItem('massatorii_lang', LANG);
+    applyLangStatic();
+    renderAll();
+  });
+}
+
 function setupIdentity(){
   const myName = getMyName();
   document.getElementById('soy-label').textContent = myName || 'elegir';
@@ -452,15 +590,15 @@ function setupIdentity(){
 
 function openIdentityModal(){
   document.getElementById('modal').innerHTML = `
-    <h3>¿Quién eres?</h3>
-    <p class="sub">Así el CRM te muestra solo tus contactos asignados.</p>
+    <h3>${t('quien_eres')}</h3>
+    <p class="sub">${t('quien_eres_sub')}</p>
     <div class="field">
-      <label>Tu nombre</label>
+      <label>${t('tu_nombre')}</label>
       <input type="text" id="f-mi-nombre" list="sdr-names" value="${getMyName()}" placeholder="ej. David">
     </div>
     <div class="modal-actions">
-      <button class="btn-secondary" id="btn-close">Cancelar</button>
-      <button class="btn-primary" id="btn-guardar-nombre">Guardar</button>
+      <button class="btn-secondary" id="btn-close">${t('cancelar')}</button>
+      <button class="btn-primary" id="btn-guardar-nombre">${t('guardar')}</button>
     </div>
   `;
   document.getElementById('overlay').classList.add('open');
@@ -547,7 +685,7 @@ function renderEquipo(){
   const owners = Array.from(new Set(contacts.map(c => (c.asignado_a || '').trim()).filter(Boolean))).sort();
 
   if(owners.length === 0){
-    body.innerHTML = `<tr><td colspan="7" style="color:var(--text-muted); text-align:center;">Sin datos todavía</td></tr>`;
+    body.innerHTML = `<tr><td colspan="7" style="color:var(--text-muted); text-align:center;">${t('sin_datos')}</td></tr>`;
     return;
   }
 
@@ -588,8 +726,8 @@ function filteredContacts(){
     list = list.filter(c => esMovil(c.telefono) === false);
   }
   if(!filterText) return list;
-  const t = filterText.toLowerCase();
-  return list.filter(c => (c.nombre||'').toLowerCase().includes(t) || (c.empresa||'').toLowerCase().includes(t));
+  const q = filterText.toLowerCase();
+  return list.filter(c => (c.nombre||'').toLowerCase().includes(q) || (c.empresa||'').toLowerCase().includes(q));
 }
 
 function renderStats(){
@@ -621,18 +759,18 @@ function cardHTML(ct){
     <p class="card-name">${ct.nombre}</p>
     <p class="card-empresa">${ct.empresa || ''}${ct.ciudad ? ' · ' + ct.ciudad.split(',')[0] : ''}</p>
     ${ct.telefono ? `<div class="card-row">${iconoTel} ${ct.telefono}</div>` : ''}
-    <div class="card-row">${ct.email || 'sin email'}</div>
-    ${esComoCloser ? `<span class="card-flag" style="color:var(--green);">Para cerrar · de ${ct.asignado_a}</span>` : ''}
-    ${overdue ? '<span class="card-flag">Seguimiento atrasado</span>' : ''}
+    <div class="card-row">${ct.email || t('sin_email')}</div>
+    ${esComoCloser ? `<span class="card-flag" style="color:var(--green);">${t('para_cerrar_de')} ${ct.asignado_a}</span>` : ''}
+    ${overdue ? `<span class="card-flag">${t('seguimiento_atrasado')}</span>` : ''}
   </div>`;
 }
 
 function renderBoard(){
   const board = document.getElementById('board');
   const filtered = filteredContacts();
-  document.getElementById('stat-total').textContent = `${filtered.length} contactos`;
+  document.getElementById('stat-total').textContent = `${filtered.length} ${t('contactos')}`;
 
-  board.innerHTML = STAGES.map(stage => {
+  board.innerHTML = getStages().map(stage => {
     const items = filtered.filter(c => (c.estado || 'pendiente') === stage.id);
     const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
     if(!boardPage[stage.id] || boardPage[stage.id] > totalPages) boardPage[stage.id] = 1;
@@ -641,7 +779,7 @@ function renderBoard(){
 
     const pagerHTML = totalPages > 1 ? `<div class="pager">
       <button class="page-prev" data-stage="${stage.id}" ${page<=1?'disabled':''}>‹</button>
-      <span>Página ${page} de ${totalPages}</span>
+      <span>${t('pagina')} ${page} ${t('de')} ${totalPages}</span>
       <button class="page-next" data-stage="${stage.id}" ${page>=totalPages?'disabled':''}>›</button>
     </div>` : '';
 
@@ -650,7 +788,7 @@ function renderBoard(){
         <h2 style="color:${stage.color}">${stage.label}</h2>
         <span class="col-count">${items.length}</span>
       </div>
-      ${pageItems.map(cardHTML).join('') || '<p class="empty-col">Vacío</p>'}
+      ${pageItems.map(cardHTML).join('') || `<p class="empty-col">${t('vacio')}</p>`}
       ${pagerHTML}
     </div>`;
   }).join('');
@@ -690,10 +828,10 @@ function renderSeguimientos(){
   body.innerHTML = pageItems.map(ct => {
     const today = todayStr();
     let badge = `<span class="badge badge-upcoming">${ct.proximo_seguimiento}</span>`;
-    if(ct.proximo_seguimiento < today) badge = `<span class="badge badge-overdue">Atrasado · ${ct.proximo_seguimiento}</span>`;
-    else if(ct.proximo_seguimiento === today) badge = `<span class="badge badge-today">Hoy</span>`;
+    if(ct.proximo_seguimiento < today) badge = `<span class="badge badge-overdue">${t('atrasado')} · ${ct.proximo_seguimiento}</span>`;
+    else if(ct.proximo_seguimiento === today) badge = `<span class="badge badge-today">${t('hoy_badge')}</span>`;
 
-    const stage = STAGES.find(s => s.id === (ct.estado||'pendiente'));
+    const stage = getStages().find(s => s.id === (ct.estado||'pendiente'));
     return `<tr data-id="${ct.id}">
       <td>${ct.nombre}</td>
       <td>${ct.empresa || ''}</td>
@@ -710,9 +848,9 @@ function renderSeguimientos(){
   if(totalPages > 1){
     pagerEl.style.display = 'flex';
     pagerEl.innerHTML = `
-      <button id="seg-prev" ${segPage<=1?'disabled':''}>‹ Anterior</button>
-      <span>Página ${segPage} de ${totalPages} · ${withDate.length} seguimientos</span>
-      <button id="seg-next" ${segPage>=totalPages?'disabled':''}>Siguiente ›</button>
+      <button id="seg-prev" ${segPage<=1?'disabled':''}>${t('anterior')}</button>
+      <span>${t('pagina')} ${segPage} ${t('de')} ${totalPages} · ${withDate.length} ${t('seguimientos_word')}</span>
+      <button id="seg-next" ${segPage>=totalPages?'disabled':''}>${t('siguiente')}</button>
     `;
     document.getElementById('seg-prev').addEventListener('click', () => { segPage--; renderSeguimientos(); });
     document.getElementById('seg-next').addEventListener('click', () => { segPage++; renderSeguimientos(); });
@@ -735,48 +873,48 @@ function openModal(id, tab){
     <p class="sub">${ct.cargo || ''}${ct.empresa ? ' · ' + ct.empresa : ''}</p>
 
     <div class="quick-links">
-      ${ct.telefono ? `<a class="ql-call" href="tel:${ct.telefono.replace(/[^0-9+]/g,'')}">Llamar</a>` : ''}
-      ${wa ? `<a class="ql-wa" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>` : (ct.telefono && esMovil(ct.telefono) === false ? `<span class="ql-wa" style="opacity:0.4; cursor:default;">Fijo, sin WA</span>` : '')}
-      ${ct.email ? `<a class="ql-mail" href="mailto:${ct.email}">Email</a>` : ''}
+      ${ct.telefono ? `<a class="ql-call" href="tel:${ct.telefono.replace(/[^0-9+]/g,'')}">${t('llamar')}</a>` : ''}
+      ${wa ? `<a class="ql-wa" href="${wa}" target="_blank" rel="noopener">${t('whatsapp')}</a>` : (ct.telefono && esMovil(ct.telefono) === false ? `<span class="ql-wa" style="opacity:0.4; cursor:default;">${t('fijo_sin_wa')}</span>` : '')}
+      ${ct.email ? `<a class="ql-mail" href="mailto:${ct.email}">${t('email')}</a>` : ''}
     </div>
 
     <div class="modal-tabs">
-      <button class="modal-tab-btn" data-mtab="datos">Datos y estado</button>
-      <button class="modal-tab-btn" data-mtab="seguimiento">Seguimiento</button>
-      <button class="modal-tab-btn" data-mtab="auditoria">Auditoría</button>
+      <button class="modal-tab-btn" data-mtab="datos">${t('modal_datos')}</button>
+      <button class="modal-tab-btn" data-mtab="seguimiento">${t('modal_seguimiento')}</button>
+      <button class="modal-tab-btn" data-mtab="auditoria">${t('modal_auditoria')}</button>
     </div>
 
     <div class="modal-pane" id="pane-datos">
-      <div class="field"><label>Teléfono</label><div class="field-value">${ct.telefono || 'No disponible'}</div></div>
-      <div class="field"><label>Email</label><div class="field-value">${ct.email || 'No disponible'}</div></div>
-      <div class="field"><label>Ciudad</label><div class="field-value">${ct.ciudad || '—'}</div></div>
+      <div class="field"><label>${t('telefono')}</label><div class="field-value">${ct.telefono || t('no_disponible')}</div></div>
+      <div class="field"><label>${t('email')}</label><div class="field-value">${ct.email || t('no_disponible')}</div></div>
+      <div class="field"><label>${t('ciudad')}</label><div class="field-value">${ct.ciudad || '—'}</div></div>
       <div class="field">
-        <label>Estado</label>
+        <label>${t('estado_lbl')}</label>
         <select id="f-estado">
-          ${STAGES.map(s => `<option value="${s.id}" ${(ct.estado||'pendiente')===s.id?'selected':''}>${s.label}</option>`).join('')}
+          ${getStages().map(s => `<option value="${s.id}" ${(ct.estado||'pendiente')===s.id?'selected':''}>${s.label}</option>`).join('')}
         </select>
       </div>
       <div class="field">
-        <label>Asignado a (SDR)</label>
-        <input type="text" id="f-asignado" list="sdr-names" value="${ct.asignado_a || ''}" placeholder="Nombre del SDR">
+        <label>${t('asignado_sdr')}</label>
+        <input type="text" id="f-asignado" list="sdr-names" value="${ct.asignado_a || ''}" placeholder="${t('nombre_sdr_ph')}">
       </div>
       <div class="field">
-        <label>Closer asignado</label>
-        <input type="text" id="f-closer" list="sdr-names" value="${ct.closer_asignado || ''}" placeholder="Nombre del closer (cuando se agenda)">
+        <label>${t('closer_asignado')}</label>
+        <input type="text" id="f-closer" list="sdr-names" value="${ct.closer_asignado || ''}" placeholder="${t('closer_ph')}">
       </div>
     </div>
 
     <div class="modal-pane" id="pane-seguimiento">
       <div class="field">
-        <label>Próxima fecha de seguimiento</label>
+        <label>${t('proxima_fecha')}</label>
         <input type="date" id="f-fecha" value="${ct.proximo_seguimiento || ''}">
       </div>
       <div class="field">
-        <label>Añadir nota al historial</label>
-        <textarea id="f-nota-nueva" placeholder="Qué se habló, próximos pasos..."></textarea>
+        <label>${t('anadir_nota')}</label>
+        <textarea id="f-nota-nueva" placeholder="${t('nota_ph')}"></textarea>
       </div>
       ${historialEntries.length ? `<div class="field">
-        <label>Historial</label>
+        <label>${t('historial_lbl')}</label>
         <div class="historial-log">
           ${historialEntries.reverse().map(e => {
             const [fecha, ...rest] = e.split('] ');
@@ -790,26 +928,26 @@ function openModal(id, tab){
       <div style="margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);">
         ${ct.equipo_detectado_auto != null ? `
           <label style="display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
-            Tamaño de equipo detectado automáticamente
+            ${t('preguntas_detectado')}
           </label>
-          <p style="font-size:13px; color:var(--green); margin:0;">Equipo de ${ct.equipo_detectado_auto} persona(s), según su web — no hace falta preguntarlo.</p>
+          <p style="font-size:13px; color:var(--green); margin:0;">${(LANG==='en'?'Team of':'Equipo de')} ${ct.equipo_detectado_auto} ${t('equipo_detectado_txt')}</p>
         ` : `
           <label style="display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
-            No lo detectamos solos — si surge en la conversación, mételo aquí
+            ${t('preguntas_no_detectado')}
           </label>
           <div class="field">
-            <label>¿Cuántas personas dedican a atender leads/clientes potenciales?</label>
+            <label>${t('cuantas_personas')}</label>
             <input type="number" id="ref-personas" value="${ct.personas_dedicadas != null ? ct.personas_dedicadas : ''}" placeholder="ej. 1">
           </div>
           <div class="field">
-            <label>¿Esas personas hacen otras tareas además de atender leads?</label>
+            <label>${t('tareas_pregunta')}</label>
             <select id="ref-tareas">
-              <option value="">Sin especificar</option>
-              <option value="si" ${ct.tareas_compartidas === true ? 'selected' : ''}>Sí, tienen más tareas</option>
-              <option value="no" ${ct.tareas_compartidas === false ? 'selected' : ''}>No, están 100% dedicadas</option>
+              <option value="">${t('sin_especificar')}</option>
+              <option value="si" ${ct.tareas_compartidas === true ? 'selected' : ''}>${t('tareas_si')}</option>
+              <option value="no" ${ct.tareas_compartidas === false ? 'selected' : ''}>${t('tareas_no')}</option>
             </select>
           </div>
-          <p style="font-size:10px; color:var(--text-muted); margin:4px 0 0;">No hace falta preguntarlo en frío — solo si sale de forma natural en la llamada.</p>
+          <p style="font-size:10px; color:var(--text-muted); margin:4px 0 0;">${t('tareas_nota')}</p>
         `}
       </div>
 
@@ -817,57 +955,57 @@ function openModal(id, tab){
         ${ct.auditoria_pct != null ? `
           ${ct.aviso_sdr ? `
           <div style="background:rgba(217,164,65,0.12); border:1px solid var(--gold); border-radius:10px; padding:12px 14px; margin-bottom:14px;">
-            <p style="font-size:10px; color:var(--gold); text-transform:uppercase; letter-spacing:0.5px; font-weight:700; margin:0 0 4px;">⚠ Solo para ti, no es para el cliente</p>
+            <p style="font-size:10px; color:var(--gold); text-transform:uppercase; letter-spacing:0.5px; font-weight:700; margin:0 0 4px;">${t('aviso_sdr_titulo')}</p>
             <p style="font-size:12px; color:var(--text); margin:0; line-height:1.5;">${ct.aviso_sdr}</p>
           </div>
           ` : ''}
           <div class="field">
-            <label>Estimación de leads perdidos</label>
+            <label>${t('estimacion_perdidos')}</label>
             <p style="font-size:32px; font-weight:700; color:var(--red); margin:0 0 10px;">${ct.auditoria_pct}%</p>
           </div>
           <div class="field">
-            <label>Detalle (para tu explicación al cliente)</label>
+            <label>${t('detalle_cliente')}</label>
             <div class="field-value" style="line-height:1.5;">${ct.auditoria_texto || ''}</div>
           </div>
-          <button class="btn-secondary" id="btn-copiar-informe" style="width:100%; margin-top:6px;">Copiar link del informe para el cliente</button>
-          <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">Solo compártelo si el cliente ya ha aceptado que le hagáis el análisis gratuito — no lo mandes de sopetón.</p>
+          <button class="btn-secondary" id="btn-copiar-informe" style="width:100%; margin-top:6px;">${t('copiar_informe')}</button>
+          <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">${t('solo_compartelo')}</p>
         ` : `
           <p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:14px;">
-            Todavía no hay auditoría generada para este contacto. Si ya tienes las respuestas de arriba, se sumarán automáticamente al generar.
+            ${t('aviso_no_generada')}
           </p>
         `}
       </div>
       <button class="btn-secondary" id="btn-auditar" style="width:100%; margin-top:8px;">
-        ${ct.auditoria_pct != null ? 'Regenerar auditoría' : 'Generar auditoría ahora'}
+        ${ct.auditoria_pct != null ? t('regenerar_auditoria') : t('generar_auditoria')}
       </button>
       <p id="auditoria-error" style="font-size:11px; color:var(--red); margin-top:8px; display:none;"></p>
 
       ${ct.auditoria_pct != null ? `
       <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
         <label style="display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
-          Calculadora en vivo (pregúntaselo en la llamada)
+          ${t('calc_titulo')}
         </label>
         <div class="field">
-          <label>Leads que recibe al mes</label>
+          <label>${t('leads_mes')}</label>
           <input type="number" id="calc-leads" placeholder="ej. 60">
         </div>
         <div class="field">
-          <label>Ticket medio / comisión por cliente cerrado (€)</label>
+          <label>${t('ticket_medio')}</label>
           <input type="number" id="calc-ticket" placeholder="ej. 2000">
         </div>
         <div class="field">
-          <label>Tasa de conversión lead → cliente (%) — si no lo sabe, deja 15</label>
+          <label>${t('tasa_conv')}</label>
           <input type="number" id="calc-conversion" value="15">
         </div>
-        <button class="btn-secondary" id="btn-calcular" style="width:100%;">Calcular pérdida estimada</button>
+        <button class="btn-secondary" id="btn-calcular" style="width:100%;">${t('calcular_perdida')}</button>
         <div id="calc-resultado" style="margin-top:12px;"></div>
       </div>
       ` : ''}
     </div>
 
     <div class="modal-actions">
-      <button class="btn-secondary" id="btn-close">Cerrar</button>
-      <button class="btn-primary" id="btn-save">Guardar</button>
+      <button class="btn-secondary" id="btn-close">${t('cerrar')}</button>
+      <button class="btn-primary" id="btn-save">${t('guardar')}</button>
     </div>
   `;
 
@@ -892,20 +1030,23 @@ function calcularPerdida(){
   const resultEl = document.getElementById('calc-resultado');
 
   if(!leads || !ticket || !conversion){
-    resultEl.innerHTML = `<p style="font-size:12px; color:var(--red);">Rellena los 3 campos para calcular.</p>`;
+    resultEl.innerHTML = `<p style="font-size:12px; color:var(--red);">${t('rellena_campos')}</p>`;
     return;
   }
 
   const leadsPerdidos = leads * (pct/100);
   const clientesPerdidos = leadsPerdidos * (conversion/100);
   const eurosPerdidos = clientesPerdidos * ticket;
+  const monthWord = LANG === 'en' ? 'mo' : 'mes';
+  const leadsWord = LANG === 'en' ? 'lost leads/mo' : 'leads perdidos/mes';
+  const clientesWord = LANG === 'en' ? 'lost clients/mo' : 'clientes perdidos/mes';
 
   resultEl.innerHTML = `
     <div style="background:var(--navy-3); border:1px solid var(--red); border-radius:10px; padding:14px;">
-      <p style="font-size:11px; color:var(--text-muted); margin:0 0 4px;">Estimación de pérdida mensual</p>
-      <p style="font-size:28px; font-weight:700; color:var(--red); margin:0 0 6px;">${eurosPerdidos.toLocaleString('es-ES', {maximumFractionDigits:0})} €/mes</p>
+      <p style="font-size:11px; color:var(--text-muted); margin:0 0 4px;">${t('perdida_estimada')}</p>
+      <p style="font-size:28px; font-weight:700; color:var(--red); margin:0 0 6px;">${eurosPerdidos.toLocaleString('es-ES', {maximumFractionDigits:0})} €/${monthWord}</p>
       <p style="font-size:11px; color:var(--text-muted); margin:0;">
-        ≈ ${leadsPerdidos.toFixed(1)} leads perdidos/mes → ${clientesPerdidos.toFixed(1)} clientes perdidos/mes
+        ≈ ${leadsPerdidos.toFixed(1)} ${leadsWord} → ${clientesPerdidos.toFixed(1)} ${clientesWord}
       </p>
     </div>
   `;
@@ -1036,7 +1177,7 @@ function wireCopiarInforme(){
   btnCopiar.addEventListener('click', () => {
     const link = `https://danielruiz-ai.github.io/dashboard/informe.html?id=${activeContact.id}`;
     navigator.clipboard.writeText(link).then(() => {
-      showToast('Link copiado');
+      showToast(t('link_copiado'));
     }).catch(() => {
       showToast('No se pudo copiar, cópialo a mano: ' + link);
     });
@@ -1066,14 +1207,14 @@ async function saveContact(){
 
   if((estado === 'hablando' || estado === 'agendado') && !proximo_seguimiento){
     setModalTab('seguimiento');
-    showToast('Ponle fecha de próximo seguimiento antes de guardar');
+    showToast(t('pon_fecha'));
     document.getElementById('f-fecha').style.borderColor = 'var(--red)';
     return;
   }
 
   if(estado === 'agendado' && !closer_asignado){
     setModalTab('datos');
-    showToast('Pon quién cierra esta llamada antes de guardar');
+    showToast(t('pon_closer'));
     document.getElementById('f-closer').style.borderColor = 'var(--red)';
     return;
   }
@@ -1089,8 +1230,8 @@ async function saveContact(){
     .update({ estado, asignado_a, closer_asignado, proximo_seguimiento, historial, fecha_contacto: new Date().toISOString() })
     .eq('id', activeContact.id);
 
-  if(error){ showToast('Error al guardar'); console.error(error); return; }
-  showToast('Guardado');
+  if(error){ showToast(t('error_guardar')); console.error(error); return; }
+  showToast(t('guardado'));
   closeModal();
   loadContacts();
 }
@@ -1111,6 +1252,7 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
+setupLangToggle();
 setupIdentity();
 loadContacts();
 setupRealtime();
