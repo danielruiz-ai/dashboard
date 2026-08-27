@@ -787,38 +787,9 @@ function openModal(id, tab){
     </div>
 
     <div class="modal-pane" id="pane-auditoria">
-      <div id="auditoria-content">
-        ${ct.auditoria_pct != null ? `
-          <div class="field">
-            <label>Estimación inicial (pública, antes de hablar con el cliente)</label>
-            <p style="font-size:32px; font-weight:700; color:var(--red); margin:0 0 10px;">${ct.auditoria_pct}%</p>
-          </div>
-          <div class="field">
-            <label>Detalle (para tu explicación al cliente)</label>
-            <div class="field-value" style="line-height:1.5;">${ct.auditoria_texto || ''}</div>
-          </div>
-          ${ct.auditoria_pct_refinado != null ? `
-          <div class="field">
-            <label>Estimación refinada (con lo que te contó el cliente)</label>
-            <p style="font-size:32px; font-weight:700; color:var(--green); margin:0 0 10px;">${ct.auditoria_pct_refinado}%</p>
-          </div>
-          ` : ''}
-          <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">Solo compártelo si el cliente ya ha aceptado que le hagáis el análisis gratuito — no lo mandes de sopetón.</p>
-        ` : `
-          <p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:14px;">
-            Todavía no hay auditoría generada para este contacto.
-          </p>
-        `}
-      </div>
-      <button class="btn-secondary" id="btn-auditar" style="width:100%; margin-top:8px;">
-        ${ct.auditoria_pct != null ? 'Regenerar auditoría' : 'Generar auditoría ahora'}
-      </button>
-      <p id="auditoria-error" style="font-size:11px; color:var(--red); margin-top:8px; display:none;"></p>
-
-      ${ct.auditoria_pct != null ? `
-      <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
+      <div style="margin-bottom:18px; padding-bottom:16px; border-bottom:1px solid var(--border);">
         <label style="display:block; font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px;">
-          Refinar con lo que te ha contado el cliente (pregúntalo en la llamada)
+          Preguntas clave (pregúntaselo al cliente antes de generar)
         </label>
         <div class="field">
           <label>¿Cuántas personas dedican a atender leads/clientes potenciales?</label>
@@ -832,9 +803,29 @@ function openModal(id, tab){
             <option value="no" ${ct.tareas_compartidas === false ? 'selected' : ''}>No, están 100% dedicadas</option>
           </select>
         </div>
-        <button class="btn-secondary" id="btn-refinar" style="width:100%;">Recalcular con esta info</button>
       </div>
-      ` : ''}
+
+      <div id="auditoria-content">
+        ${ct.auditoria_pct != null ? `
+          <div class="field">
+            <label>Estimación de leads perdidos</label>
+            <p style="font-size:32px; font-weight:700; color:var(--red); margin:0 0 10px;">${ct.auditoria_pct}%</p>
+          </div>
+          <div class="field">
+            <label>Detalle (para tu explicación al cliente)</label>
+            <div class="field-value" style="line-height:1.5;">${ct.auditoria_texto || ''}</div>
+          </div>
+          <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">Solo compártelo si el cliente ya ha aceptado que le hagáis el análisis gratuito — no lo mandes de sopetón.</p>
+        ` : `
+          <p style="font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:14px;">
+            Todavía no hay auditoría generada para este contacto. Si ya tienes las respuestas de arriba, se sumarán automáticamente al generar.
+          </p>
+        `}
+      </div>
+      <button class="btn-secondary" id="btn-auditar" style="width:100%; margin-top:8px;">
+        ${ct.auditoria_pct != null ? 'Regenerar auditoría' : 'Generar auditoría ahora'}
+      </button>
+      <p id="auditoria-error" style="font-size:11px; color:var(--red); margin-top:8px; display:none;"></p>
 
       ${ct.auditoria_pct != null ? `
       <div style="margin-top:20px; padding-top:16px; border-top:1px solid var(--border);">
@@ -873,8 +864,6 @@ function openModal(id, tab){
   document.getElementById('btn-close').addEventListener('click', closeModal);
   document.getElementById('btn-save').addEventListener('click', saveContact);
   document.getElementById('btn-auditar').addEventListener('click', runAudit);
-  const btnRefinar = document.getElementById('btn-refinar');
-  if(btnRefinar) btnRefinar.addEventListener('click', refinarAuditoria);
   const btnCalc = document.getElementById('btn-calcular');
   if(btnCalc) btnCalc.addEventListener('click', calcularPerdida);
 }
@@ -906,36 +895,15 @@ function calcularPerdida(){
   `;
 }
 
-async function refinarAuditoria(){
-  if(!activeContact || activeContact.auditoria_pct == null) return;
-  const personasVal = document.getElementById('ref-personas').value;
-  const tareasVal = document.getElementById('ref-tareas').value;
-
-  const personas = personasVal !== '' ? parseInt(personasVal) : null;
-  const tareas_compartidas = tareasVal === 'si' ? true : tareasVal === 'no' ? false : null;
-
-  let pct = activeContact.auditoria_pct;
-
+function ajustePorEquipo(pctBase, personas, tareas_compartidas){
+  let pct = pctBase;
   if(personas != null){
     if(personas <= 1 && tareas_compartidas === true) pct += 12;
     else if(personas <= 1 && tareas_compartidas === false) pct += 3;
     else if(personas >= 2 && tareas_compartidas === true) pct += 5;
     else if(personas >= 3 && tareas_compartidas === false) pct -= 8;
   }
-  pct = Math.max(5, Math.min(45, pct));
-
-  const { error } = await sb.from('pipeline_manual')
-    .update({ personas_dedicadas: personas, tareas_compartidas, auditoria_pct_refinado: pct })
-    .eq('id', activeContact.id);
-
-  if(error){ showToast('Error al guardar'); console.error(error); return; }
-
-  activeContact.personas_dedicadas = personas;
-  activeContact.tareas_compartidas = tareas_compartidas;
-  activeContact.auditoria_pct_refinado = pct;
-  showToast('Auditoría refinada');
-  openModal(activeContact.id, 'auditoria');
-  loadContacts();
+  return Math.max(5, Math.min(45, pct));
 }
 
 async function runAudit(){
@@ -945,6 +913,11 @@ async function runAudit(){
   errorEl.style.display = 'none';
   btn.disabled = true;
   btn.textContent = 'Consultando Google...';
+
+  const personasVal = document.getElementById('ref-personas').value;
+  const tareasVal = document.getElementById('ref-tareas').value;
+  const personas = personasVal !== '' ? parseInt(personasVal) : null;
+  const tareas_compartidas = tareasVal === 'si' ? true : tareasVal === 'no' ? false : null;
 
   const queryTexto = `${activeContact.empresa || activeContact.nombre} ${activeContact.ciudad || ''}`.trim();
 
@@ -964,8 +937,24 @@ async function runAudit(){
       return;
     }
 
+    const pctFinal = ajustePorEquipo(data.pct, personas, tareas_compartidas);
+    let textoFinal = data.texto;
+    if(personas != null){
+      const notaEquipo = tareas_compartidas === true
+        ? `El cliente indica ${personas} persona(s) dedicada(s) a leads, compartiendo esa tarea con otras responsabilidades.`
+        : tareas_compartidas === false
+          ? `El cliente indica ${personas} persona(s) 100% dedicada(s) a atender leads.`
+          : `El cliente indica ${personas} persona(s) dedicada(s) a leads.`;
+      textoFinal = `${data.texto} ${notaEquipo}`;
+    }
+
     const { error } = await sb.from('pipeline_manual')
-      .update({ auditoria_pct: data.pct, auditoria_texto: data.texto })
+      .update({
+        auditoria_pct: pctFinal,
+        auditoria_texto: textoFinal,
+        personas_dedicadas: personas,
+        tareas_compartidas: tareas_compartidas
+      })
       .eq('id', activeContact.id);
 
     if(error){
@@ -976,16 +965,18 @@ async function runAudit(){
       return;
     }
 
-    activeContact.auditoria_pct = data.pct;
-    activeContact.auditoria_texto = data.texto;
+    activeContact.auditoria_pct = pctFinal;
+    activeContact.auditoria_texto = textoFinal;
+    activeContact.personas_dedicadas = personas;
+    activeContact.tareas_compartidas = tareas_compartidas;
     document.getElementById('auditoria-content').innerHTML = `
       <div class="field">
         <label>Estimación de leads perdidos</label>
-        <p style="font-size:32px; font-weight:700; color:var(--red); margin:0 0 10px;">${data.pct}%</p>
+        <p style="font-size:32px; font-weight:700; color:var(--red); margin:0 0 10px;">${pctFinal}%</p>
       </div>
       <div class="field">
         <label>Detalle (para tu explicación al cliente)</label>
-        <div class="field-value" style="line-height:1.5;">${data.texto}</div>
+        <div class="field-value" style="line-height:1.5;">${textoFinal}</div>
       </div>
       <p style="font-size:11px; color:var(--text-muted); margin-top:10px;">Solo compártelo si el cliente ya ha aceptado que le hagáis el análisis gratuito — no lo mandes de sopetón.</p>
     `;
