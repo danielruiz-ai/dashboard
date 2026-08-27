@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis gratuito — Massatorii</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --navy:#070C15;
+    --navy-2:#101929;
+    --navy-3:#182338;
+    --red:#D73427;
+    --green:#25D366;
+    --gold:#D9A441;
+    --text:#EDEFF3;
+    --text-muted:#8A93A6;
+    --border:#243350;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:'Space Grotesk', sans-serif;
+    background:var(--navy);
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .card{
+    background:var(--navy-2);
+    border:1px solid var(--border);
+    border-radius:20px;
+    max-width:480px;
+    width:100%;
+    padding:32px 28px;
+  }
+  .brand{
+    font-size:15px; font-weight:800; letter-spacing:1px; margin-bottom:4px;
+  }
+  .brand span{color:var(--red);}
+  .subtitle{font-size:12px; color:var(--text-muted); margin-bottom:28px;}
+  .empresa{font-size:22px; font-weight:700; margin:0 0 4px;}
+  .ciudad{font-size:13px; color:var(--text-muted); margin:0 0 28px;}
+
+  .gauge-wrap{display:flex; justify-content:center; margin-bottom:24px;}
+  .gauge-label{
+    text-align:center; font-size:11px; text-transform:uppercase; letter-spacing:0.8px;
+    color:var(--text-muted); margin-bottom:28px;
+  }
+
+  .detalle{
+    background:var(--navy-3); border:1px solid var(--border); border-radius:12px;
+    padding:16px 18px; font-size:13px; line-height:1.6; color:var(--text); margin-bottom:24px;
+  }
+
+  .cta{
+    background:linear-gradient(135deg, var(--red), #a8281d);
+    border-radius:14px; padding:18px 20px; text-align:center;
+  }
+  .cta p{margin:0 0 10px; font-size:14px; font-weight:600;}
+  .cta a{
+    display:inline-block; background:#fff; color:var(--red); text-decoration:none;
+    padding:10px 22px; border-radius:8px; font-weight:700; font-size:13px;
+  }
+
+  .footer{text-align:center; margin-top:24px; font-size:10px; color:var(--text-muted);}
+  .loading, .error{text-align:center; padding:60px 20px; color:var(--text-muted); font-size:14px;}
+</style>
+</head>
+<body>
+
+<div id="app" class="card">
+  <div class="loading">Cargando análisis...</div>
+</div>
+
+<script>
+const SUPABASE_URL = "https://govlsomhnxhlgdkkxibd.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imdvdmxzb21obnhobGdka2t4aWJkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODI2Nzg3NDUsImV4cCI6MjA5ODI1NDc0NX0.RUAaSS1sKSRWpBKsFcc8FH0iKZaoBBeG_bXVCSbWKSs";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function gaugeSVG(pct){
+  const size = 160, stroke = 14, r = (size - stroke) / 2, c = 2 * Math.PI * r;
+  const offset = c - (pct / 100) * c;
+  const color = pct >= 30 ? '#D73427' : pct >= 15 ? '#D9A441' : '#25D366';
+  return `
+    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="#182338" stroke-width="${stroke}"/>
+      <circle cx="${size/2}" cy="${size/2}" r="${r}" fill="none" stroke="${color}" stroke-width="${stroke}"
+        stroke-dasharray="${c}" stroke-dashoffset="${offset}" stroke-linecap="round"
+        transform="rotate(-90 ${size/2} ${size/2})"/>
+      <text x="50%" y="46%" text-anchor="middle" fill="#EDEFF3" font-size="34" font-weight="800" font-family="Space Grotesk">${pct}%</text>
+      <text x="50%" y="60%" text-anchor="middle" fill="#8A93A6" font-size="10" font-family="Space Grotesk">leads perdidos</text>
+    </svg>
+  `;
+}
+
+async function render(){
+  const params = new URLSearchParams(window.location.search);
+  const id = params.get('id');
+  const app = document.getElementById('app');
+
+  if(!id){
+    app.innerHTML = `<div class="error">Falta el identificador del informe.</div>`;
+    return;
+  }
+
+  const { data, error } = await sb.from('pipeline_manual')
+    .select('empresa, ciudad, sector, auditoria_pct, auditoria_texto')
+    .eq('id', id)
+    .single();
+
+  if(error || !data || data.auditoria_pct == null){
+    app.innerHTML = `<div class="error">Este informe todavía no está disponible.</div>`;
+    return;
+  }
+
+  const nombreEmpresa = data.empresa || 'tu negocio';
+
+  app.innerHTML = `
+    <div class="brand">MASSATORII<span>.</span></div>
+    <div class="subtitle">Análisis gratuito de respuesta a leads</div>
+    <p class="empresa">${nombreEmpresa}</p>
+    <p class="ciudad">${data.ciudad || ''}</p>
+
+    <div class="gauge-wrap">${gaugeSVG(data.auditoria_pct)}</div>
+    <p class="gauge-label">Estimación de leads potenciales perdidos por falta de respuesta a tiempo</p>
+
+    <div class="detalle">${data.auditoria_texto || ''}</div>
+
+    <div class="cta">
+      <p>¿Quieres que dejemos esto en 0%?</p>
+      <p style="font-size:12px; font-weight:400; opacity:0.9; margin:0;">Responde a este mismo chat de WhatsApp y lo vemos juntos.</p>
+    </div>
+
+    <div class="footer">Análisis basado en datos públicos (horario y reseñas de Google) · Massatorii</div>
+  `;
+}
+
+render();
+</script>
+</body>
+</html>
