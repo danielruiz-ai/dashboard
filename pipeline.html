@@ -75,7 +75,7 @@
     font-family:inherit;
     min-width:180px;
   }
-  select#owner-filter{
+  select#owner-filter, select#phone-filter{
     background:var(--navy-2);
     border:1px solid var(--border);
     color:var(--text);
@@ -288,6 +288,11 @@
       <select id="owner-filter">
         <option value="">Todos los SDR</option>
       </select>
+      <select id="phone-filter">
+        <option value="">Todos los números</option>
+        <option value="movil">Solo con WhatsApp</option>
+        <option value="fijo">Solo fijo (llamar)</option>
+      </select>
       <button id="btn-soy" style="background:var(--navy-3); color:var(--gold); border:1px solid var(--gold); padding:8px 14px; border-radius:8px; font-size:13px;">Soy: <span id="soy-label">elegir</span></button>
       <input id="search" type="text" placeholder="Buscar nombre o empresa...">
       <span class="stat" id="stat-total">— contactos</span>
@@ -375,6 +380,7 @@ const STAGES = [
 let contacts = [];
 let filterText = '';
 let filterOwner = '';
+let filterPhone = '';
 let activeContact = null;
 let currentView = 'tablero';
 let modalTab = 'datos';
@@ -484,8 +490,26 @@ const NICHOS = {
   legal:        { plural: 'despachos de abogados', posesivo: 'vuestro despacho', perdidos: 'casos' }
 };
 
+function esMovil(phone){
+  if(!phone) return null;
+  const digits = phone.replace(/[^0-9]/g, '');
+  // España: +34, móviles empiezan por 6 o 7
+  if(digits.startsWith('34')){
+    const local = digits.slice(2);
+    return /^[67]/.test(local);
+  }
+  // Reino Unido: +44, móviles empiezan por 07 (sin el 0 inicial: 7)
+  if(digits.startsWith('44')){
+    const local = digits.slice(2);
+    return /^7/.test(local);
+  }
+  // Fallback genérico: si no reconocemos el prefijo de país, asumimos que no lo sabemos
+  return null;
+}
+
 function waLink(phone, empresa, asignado_a, sector, idioma){
   if(!phone) return null;
+  if(esMovil(phone) === false) return null; // fijo detectado: no ofrecer botón de WhatsApp
 
   if(idioma === 'en'){
     const nicho_en = {
@@ -558,6 +582,11 @@ function filteredContacts(){
       (c.closer_asignado || '').trim() === filterOwner
     );
   }
+  if(filterPhone === 'movil'){
+    list = list.filter(c => esMovil(c.telefono) === true);
+  } else if(filterPhone === 'fijo'){
+    list = list.filter(c => esMovil(c.telefono) === false);
+  }
   if(!filterText) return list;
   const t = filterText.toLowerCase();
   return list.filter(c => (c.nombre||'').toLowerCase().includes(t) || (c.empresa||'').toLowerCase().includes(t));
@@ -586,10 +615,12 @@ function cardHTML(ct){
   const esComoCloser = filterOwner && filterOwner !== '__sin_asignar__' &&
     (ct.closer_asignado || '').trim() === filterOwner &&
     (ct.asignado_a || '').trim() !== filterOwner;
+  const tipoTel = esMovil(ct.telefono);
+  const iconoTel = tipoTel === true ? '📱' : tipoTel === false ? '☎️' : '';
   return `<div class="card" data-id="${ct.id}">
     <p class="card-name">${ct.nombre}</p>
     <p class="card-empresa">${ct.empresa || ''}${ct.ciudad ? ' · ' + ct.ciudad.split(',')[0] : ''}</p>
-    ${ct.telefono ? `<div class="card-row">${ct.telefono}</div>` : ''}
+    ${ct.telefono ? `<div class="card-row">${iconoTel} ${ct.telefono}</div>` : ''}
     <div class="card-row">${ct.email || 'sin email'}</div>
     ${esComoCloser ? `<span class="card-flag" style="color:var(--green);">Para cerrar · de ${ct.asignado_a}</span>` : ''}
     ${overdue ? '<span class="card-flag">Seguimiento atrasado</span>' : ''}
@@ -705,7 +736,7 @@ function openModal(id, tab){
 
     <div class="quick-links">
       ${ct.telefono ? `<a class="ql-call" href="tel:${ct.telefono.replace(/[^0-9+]/g,'')}">Llamar</a>` : ''}
-      ${wa ? `<a class="ql-wa" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+      ${wa ? `<a class="ql-wa" href="${wa}" target="_blank" rel="noopener">WhatsApp</a>` : (ct.telefono && esMovil(ct.telefono) === false ? `<span class="ql-wa" style="opacity:0.4; cursor:default;">Fijo, sin WA</span>` : '')}
       ${ct.email ? `<a class="ql-mail" href="mailto:${ct.email}">Email</a>` : ''}
     </div>
 
@@ -966,6 +997,7 @@ document.getElementById('overlay').addEventListener('click', (e) => { if(e.targe
 document.getElementById('refresh').addEventListener('click', loadContacts);
 document.getElementById('search').addEventListener('input', (e) => { filterText = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
 document.getElementById('owner-filter').addEventListener('change', (e) => { filterOwner = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
+document.getElementById('phone-filter').addEventListener('change', (e) => { filterPhone = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
