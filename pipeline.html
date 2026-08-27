@@ -966,6 +966,7 @@ async function runAudit(){
       .update({
         auditoria_pct: pctFinal,
         auditoria_texto: textoFinal,
+        auditoria_desglose: data.desglose || null,
         personas_dedicadas: data.equipo_detectado_auto != null ? data.equipo_detectado_auto : personas,
         equipo_detectado_auto: data.equipo_detectado_auto,
         tareas_compartidas: tareas_compartidas
