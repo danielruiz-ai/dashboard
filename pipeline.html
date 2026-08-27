@@ -641,6 +641,11 @@ function esMovil(phone){
     const local = digits.slice(2);
     return /^7/.test(local);
   }
+  // Sudáfrica: +27, móviles empiezan por 6, 7 u 8; fijos por prefijos de área (1-5)
+  if(digits.startsWith('27')){
+    const local = digits.slice(2);
+    return /^[678]/.test(local);
+  }
   // Fallback genérico: si no reconocemos el prefijo de país, asumimos que no lo sabemos
   return null;
 }
