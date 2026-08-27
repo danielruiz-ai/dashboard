@@ -310,17 +310,12 @@ async function render(){
       <p><strong>Metodología:</strong> este informe se genera automáticamente a partir de datos públicos de Google (horario de atención, reseñas de clientes verificadas y presencia web). Es una estimación orientativa, no una medición exacta de vuestro tráfico real.</p>
     </div>
 
-    <button id="btn-download-pdf" class="no-print" style="width:100%; margin-top:16px; background:var(--navy-4); color:var(--text); border:1px solid var(--border); padding:14px; border-radius:12px; font-size:13px; font-weight:700; font-family:'Space Grotesk', sans-serif; cursor:pointer;">
+    <a id="btn-download-pdf" class="no-print" href="https://govlsomhnxhlgdkkxibd.supabase.co/functions/v1/informe-pdf?id=${id}" style="display:block; text-align:center; text-decoration:none; width:100%; margin-top:16px; background:var(--navy-4); color:var(--text); border:1px solid var(--border); padding:14px; border-radius:12px; font-size:13px; font-weight:700; font-family:'Space Grotesk', sans-serif; cursor:pointer; box-sizing:border-box;">
       Descargar informe en PDF
-    </button>
-    <p class="no-print" style="text-align:center; font-size:10.5px; color:var(--text-muted); margin-top:8px;">Se abre el cuadro de impresión — elige "Guardar como PDF" como destino.</p>
+    </a>
 
     <div class="footer">Massatorii · Automatización de leads con IA</div>
   `;
-
-  document.getElementById('btn-download-pdf').addEventListener('click', () => {
-    window.print();
-  });
 }
 
 render();
