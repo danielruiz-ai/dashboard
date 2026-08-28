@@ -88,6 +88,8 @@
   tr:last-child td { border-bottom: none; }
   .empty { color: var(--text-muted); text-align: center; padding: 3rem; font-size: 14px; }
   .loading { color: var(--text-muted); font-size: 14px; }
+  .kpi-value.loading { color: transparent; background: linear-gradient(90deg, var(--surface-2) 25%, var(--border) 50%, var(--surface-2) 75%); background-size: 200% 100%; animation: skeleton-pulse 1.4s ease-in-out infinite; border-radius: 4px; display: inline-block; min-width: 48px; }
+  @keyframes skeleton-pulse { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
   .error { color: var(--danger); font-size: 14px; }
   .spinning { animation: spin 1s linear infinite; display: inline-block; }
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
@@ -177,6 +179,12 @@
   </div>
 
   <div id="resumen-view">
+  <div id="insight-callout" class="card" style="margin-bottom:1rem; display:none; border-left:3px solid var(--accent);">
+    <div style="display:flex; align-items:flex-start; gap:10px;">
+      <i class="ti ti-bulb" style="font-size:18px; color:var(--accent); margin-top:1px;"></i>
+      <p id="insight-text" style="font-size:14px; color:var(--text-primary); line-height:1.5;"></p>
+    </div>
+  </div>
   <div class="kpi-grid" id="kpi-grid">
     <div class="kpi"><div class="kpi-label">Leads nuevos</div><div class="kpi-value loading">—</div></div>
     <div class="kpi kpi-accent"><div class="kpi-label">Llamadas agendadas</div><div class="kpi-value loading">—</div></div>
@@ -221,6 +229,7 @@
       <span class="dot dot-green"></span>
       <span id="last-update">Conectado a Supabase</span>
     </div>
+    <p style="font-size:11px; color:var(--text-muted); margin-top:14px; opacity:0.7;">Powered by Massatorii</p>
   </div>
   </div>
 
@@ -437,6 +446,42 @@ function trendHtml(current, previous) {
   return `<span class="trend-flat">— sin cambios</span>`;
 }
 
+function renderInsight(total, totalPrev, tasa, tasaPrev, avgResp, avgRespPrev) {
+  const box = document.getElementById('insight-callout');
+  const textEl = document.getElementById('insight-text');
+  if (!box || !textEl) return;
+
+  if (currentPeriod === 'all' || total === 0) { box.style.display = 'none'; return; }
+
+  const frases = [];
+
+  if (totalPrev > 0) {
+    const diffLeads = Math.round(((total - totalPrev) / totalPrev) * 100);
+    if (diffLeads > 5) frases.push(`habéis recibido un ${diffLeads}% más de leads`);
+    else if (diffLeads < -5) frases.push(`han bajado los leads un ${Math.abs(diffLeads)}%`);
+  } else if (total > 0) {
+    frases.push(`habéis recibido ${total} lead${total === 1 ? '' : 's'} nuevo${total === 1 ? '' : 's'}`);
+  }
+
+  if (tasaPrev > 0 && tasa !== tasaPrev) {
+    const diffTasa = tasa - tasaPrev;
+    frases.push(`la conversión ${diffTasa > 0 ? 'ha mejorado' : 'ha bajado'} ${Math.abs(diffTasa)} puntos`);
+  }
+
+  if (avgResp !== null && avgRespPrev !== null && Math.round(avgResp) !== Math.round(avgRespPrev)) {
+    frases.push(avgResp < avgRespPrev ? `estáis respondiendo más rápido que antes` : `el tiempo de respuesta ha subido, conviene revisarlo`);
+  }
+
+  if (frases.length === 0) { box.style.display = 'none'; return; }
+
+  const periodTxt = {week:'Esta semana', last_week:'La semana pasada', month:'Este mes', last_month:'El mes pasado', custom:'En este periodo'}[currentPeriod] || 'En este periodo';
+  let frase = frases[0];
+  if (frases.length > 1) frase += `, y ${frases[1]}`;
+
+  textEl.textContent = `${periodTxt}, ${frase}.`;
+  box.style.display = 'block';
+}
+
 function avgResponseMinutes(leads) {
   const withBoth = leads.filter(l => l.created_at && l.fecha_primer_contacto);
   if (withBoth.length === 0) return null;
@@ -476,6 +521,10 @@ function render() {
     last_month: 'mes pasado', all: 'en total', custom: 'en el rango'
   };
   const label = periodLabels[currentPeriod] || '';
+
+  const avgRespForInsight = avgResponseMinutes(filtered);
+  const avgRespPrevForInsight = avgResponseMinutes(previous);
+  renderInsight(total, totalPrev, tasa, tasaPrev, avgRespForInsight, avgRespPrevForInsight);
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi">
