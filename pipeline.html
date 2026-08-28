@@ -298,6 +298,7 @@
       <input id="search" type="text" placeholder="Buscar nombre o empresa...">
       <span class="stat" id="stat-total">— contactos</span>
       <button id="refresh">Actualizar</button>
+      <button id="btn-nuevo-contacto" style="background:var(--green); color:#04170c; border:none; padding:8px 14px; border-radius:8px; font-size:13px; font-weight:700;">+ <span id="nuevo-contacto-label">Nuevo contacto</span></button>
     </div>
   </div>
   <div class="tabs">
@@ -434,6 +435,14 @@ const STR = {
     calcular_perdida: 'Calcular pérdida estimada', perdida_estimada: 'Estimación de pérdida mensual',
     guardado: 'Guardado', error_guardar: 'Error al guardar', pon_fecha: 'Ponle fecha de próximo seguimiento antes de guardar',
     pon_closer: 'Pon quién cierra esta llamada antes de guardar', rellena_campos: 'Rellena los 3 campos para calcular.',
+    nuevo_contacto: 'Nuevo contacto', tab_uno: 'Uno a uno', tab_lista: 'Pegar lista',
+    nombre_lbl: 'Nombre', empresa_lbl: 'Empresa', telefono_req: 'Teléfono (obligatorio)',
+    ciudad_ph: 'ej. Madrid, España', sector_lbl: 'Sector', idioma_lbl: 'Idioma del contacto',
+    guardar_contacto: 'Guardar contacto', nombre_tel_obligatorio: 'El nombre y el teléfono son obligatorios',
+    contacto_creado: 'Contacto creado', lista_instrucciones: 'Pega tu lista, una línea por contacto, separado por comas: Nombre, Empresa, Teléfono, Ciudad, Sector',
+    lista_ph: 'María García, Inmobiliaria X, +34 600 000 000, Madrid, inmobiliaria', importar_lista: 'Importar lista',
+    lista_vacia: 'Pega al menos una línea', filas_importadas: (n) => `${n} contacto(s) importado(s)`,
+    fila_sin_datos: 'Alguna línea no tiene nombre o teléfono y se ha saltado',
   },
   en: {
     todos_sdr: 'All SDRs', sin_asignar: 'Unassigned',
@@ -478,6 +487,14 @@ const STR = {
     calcular_perdida: 'Calculate estimated loss', perdida_estimada: 'Estimated monthly loss',
     guardado: 'Saved', error_guardar: 'Error saving', pon_fecha: 'Set a next follow-up date before saving',
     pon_closer: 'Set who is closing this call before saving', rellena_campos: 'Fill in all 3 fields to calculate.',
+    nuevo_contacto: 'New contact', tab_uno: 'One by one', tab_lista: 'Paste list',
+    nombre_lbl: 'Name', empresa_lbl: 'Company', telefono_req: 'Phone (required)',
+    ciudad_ph: 'e.g. Madrid, Spain', sector_lbl: 'Sector', idioma_lbl: "Contact's language",
+    guardar_contacto: 'Save contact', nombre_tel_obligatorio: 'Name and phone are required',
+    contacto_creado: 'Contact created', lista_instrucciones: 'Paste your list, one line per contact, comma-separated: Name, Company, Phone, City, Sector',
+    lista_ph: 'Mary Smith, Real Estate X, +27 82 000 0000, Cape Town, inmobiliaria', importar_lista: 'Import list',
+    lista_vacia: 'Paste at least one line', filas_importadas: (n) => `${n} contact(s) imported`,
+    fila_sin_datos: 'Some line(s) missing name or phone were skipped',
   }
 };
 
@@ -551,6 +568,7 @@ function applyLangStatic(){
   document.getElementById('soy-word').textContent = t('soy');
   document.getElementById('search').placeholder = t('buscar_ph');
   document.getElementById('refresh').textContent = t('actualizar');
+  document.getElementById('nuevo-contacto-label').textContent = t('nuevo_contacto');
   document.getElementById('tab-tablero').childNodes[0].textContent = t('tab_tablero') + ' ';
   document.getElementById('tab-seguimientos').childNodes[0].textContent = t('tab_seguimientos') + ' ';
   document.getElementById('tab-equipo').childNodes[0].textContent = t('tab_equipo') + ' ';
@@ -586,6 +604,113 @@ function setupIdentity(){
   updateAdminVisibility();
 
   document.getElementById('btn-soy').addEventListener('click', openIdentityModal);
+  document.getElementById('btn-nuevo-contacto').addEventListener('click', openNuevoContactoModal);
+}
+
+const SECTORES = ['inmobiliaria', 'legal', 'fitness', 'fotografia', 'autoescuela', 'otro'];
+
+function openNuevoContactoModal(){
+  const miNombre = getMyName() || '';
+  document.getElementById('modal').innerHTML = `
+    <h3>${t('nuevo_contacto')}</h3>
+    <div class="modal-tabs">
+      <button class="modal-tab-btn active" data-nctab="uno">${t('tab_uno')}</button>
+      <button class="modal-tab-btn" data-nctab="lista">${t('tab_lista')}</button>
+    </div>
+
+    <div class="modal-pane active" id="nc-pane-uno">
+      <div class="field"><label>${t('nombre_lbl')}</label><input type="text" id="nc-nombre"></div>
+      <div class="field"><label>${t('empresa_lbl')}</label><input type="text" id="nc-empresa"></div>
+      <div class="field"><label>${t('telefono_req')}</label><input type="text" id="nc-telefono" placeholder="+34 600 000 000"></div>
+      <div class="field"><label>${t('email')}</label><input type="text" id="nc-email"></div>
+      <div class="field"><label>${t('ciudad')}</label><input type="text" id="nc-ciudad" placeholder="${t('ciudad_ph')}"></div>
+      <div class="field">
+        <label>${t('sector_lbl')}</label>
+        <select id="nc-sector">${SECTORES.map(s => `<option value="${s}">${s}</option>`).join('')}</select>
+      </div>
+      <div class="field">
+        <label>${t('idioma_lbl')}</label>
+        <select id="nc-idioma"><option value="es">Español</option><option value="en">English</option></select>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btn-close">${t('cancelar')}</button>
+        <button class="btn-primary" id="btn-guardar-nuevo">${t('guardar_contacto')}</button>
+      </div>
+    </div>
+
+    <div class="modal-pane" id="nc-pane-lista">
+      <p style="font-size:12px; color:var(--text-muted); margin:0 0 10px; line-height:1.5;">${t('lista_instrucciones')}</p>
+      <textarea id="nc-lista" rows="8" style="width:100%; min-height:160px;" placeholder="${t('lista_ph')}"></textarea>
+      <div class="modal-actions">
+        <button class="btn-secondary" id="btn-close">${t('cancelar')}</button>
+        <button class="btn-primary" id="btn-importar-lista">${t('importar_lista')}</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('overlay').classList.add('open');
+  document.querySelectorAll('#modal .modal-tab-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('#modal .modal-tab-btn').forEach(x => x.classList.toggle('active', x===b));
+      document.getElementById('nc-pane-uno').classList.toggle('active', b.getAttribute('data-nctab')==='uno');
+      document.getElementById('nc-pane-lista').classList.toggle('active', b.getAttribute('data-nctab')==='lista');
+    });
+  });
+  document.getElementById('btn-close').addEventListener('click', closeModal);
+  document.getElementById('btn-guardar-nuevo').addEventListener('click', guardarNuevoContacto);
+  document.getElementById('btn-importar-lista').addEventListener('click', importarLista);
+}
+
+async function guardarNuevoContacto(){
+  const nombre = document.getElementById('nc-nombre').value.trim();
+  const telefono = document.getElementById('nc-telefono').value.trim();
+  if(!nombre || !telefono){ showToast(t('nombre_tel_obligatorio')); return; }
+
+  const nuevo = {
+    nombre,
+    empresa: document.getElementById('nc-empresa').value.trim(),
+    telefono,
+    email: document.getElementById('nc-email').value.trim(),
+    ciudad: document.getElementById('nc-ciudad').value.trim(),
+    sector: document.getElementById('nc-sector').value,
+    idioma: document.getElementById('nc-idioma').value,
+    estado: 'pendiente',
+    fuente: 'manual',
+    asignado_a: getMyName() || null
+  };
+
+  const { error } = await sb.from('pipeline_manual').insert(nuevo);
+  if(error){ showToast(t('error_guardar')); console.error(error); return; }
+  showToast(t('contacto_creado'));
+  closeModal();
+  loadContacts();
+}
+
+async function importarLista(){
+  const raw = document.getElementById('nc-lista').value;
+  const lineas = raw.split('\n').map(l => l.trim()).filter(Boolean);
+  if(lineas.length === 0){ showToast(t('lista_vacia')); return; }
+
+  const miNombre = getMyName() || null;
+  const filas = [];
+  let saltadas = 0;
+  for(const linea of lineas){
+    const partes = linea.split(',').map(p => p.trim());
+    const [nombre, empresa, telefono, ciudad, sector] = partes;
+    if(!nombre || !telefono){ saltadas++; continue; }
+    filas.push({
+      nombre, empresa: empresa || '', telefono, ciudad: ciudad || '', sector: sector || 'otro',
+      idioma: LANG, estado: 'pendiente', fuente: 'manual', asignado_a: miNombre
+    });
+  }
+
+  if(filas.length === 0){ showToast(t('lista_vacia')); return; }
+
+  const { error } = await sb.from('pipeline_manual').insert(filas);
+  if(error){ showToast(t('error_guardar')); console.error(error); return; }
+
+  showToast(STR[LANG].filas_importadas(filas.length) + (saltadas ? ` — ${t('fila_sin_datos')}` : ''));
+  closeModal();
+  loadContacts();
 }
 
 function openIdentityModal(){
