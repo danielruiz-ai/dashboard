@@ -293,6 +293,12 @@
         <option value="movil" id="opt-solo-movil">Solo con WhatsApp</option>
         <option value="fijo" id="opt-solo-fijo">Solo fijo (llamar)</option>
       </select>
+      <select id="sector-filter">
+        <option value="" id="opt-todos-sector">Todos los sectores</option>
+      </select>
+      <select id="origen-filter">
+        <option value="" id="opt-todos-origen">Todos los orígenes</option>
+      </select>
       <button id="btn-lang" style="background:var(--navy-3); color:var(--text); border:1px solid var(--border); padding:8px 12px; border-radius:8px; font-size:13px; font-weight:700;">EN/ES</button>
       <button id="btn-soy" style="background:var(--navy-3); color:var(--gold); border:1px solid var(--gold); padding:8px 14px; border-radius:8px; font-size:13px;"><span id="soy-word">Soy:</span> <span id="soy-label">elegir</span></button>
       <input id="search" type="text" placeholder="Buscar nombre o empresa...">
@@ -389,6 +395,8 @@ let contacts = [];
 let filterText = '';
 let filterOwner = '';
 let filterPhone = '';
+let filterSector = '';
+let filterOrigen = '';
 let LANG = localStorage.getItem('massatorii_lang') || 'es';
 
 const STR = {
@@ -443,6 +451,10 @@ const STR = {
     lista_ph: 'María García, Inmobiliaria X, +34 600 000 000, Madrid, inmobiliaria', importar_lista: 'Importar lista',
     lista_vacia: 'Pega al menos una línea', filas_importadas: (n) => `${n} contacto(s) importado(s)`,
     fila_sin_datos: 'Alguna línea no tiene nombre o teléfono y se ha saltado',
+    todos_sector: 'Todos los sectores', todos_origen: 'Todos los orígenes',
+    origen_google: 'Google Places', origen_manual: 'Añadido a mano', origen_apollo: 'Apollo',
+    sin_tocar: (n) => `${n} días sin tocar`, sin_tocar_hoy: 'Sin tocar hoy mismo',
+    contacto_auto: (canal) => `Contacto automático vía ${canal}`,
   },
   en: {
     todos_sdr: 'All SDRs', sin_asignar: 'Unassigned',
@@ -495,6 +507,10 @@ const STR = {
     lista_ph: 'Mary Smith, Real Estate X, +27 82 000 0000, Cape Town, inmobiliaria', importar_lista: 'Import list',
     lista_vacia: 'Paste at least one line', filas_importadas: (n) => `${n} contact(s) imported`,
     fila_sin_datos: 'Some line(s) missing name or phone were skipped',
+    todos_sector: 'All sectors', todos_origen: 'All sources',
+    origen_google: 'Google Places', origen_manual: 'Added manually', origen_apollo: 'Apollo',
+    sin_tocar: (n) => `${n} days untouched`, sin_tocar_hoy: 'Untouched today',
+    contacto_auto: (canal) => `Automatic contact via ${canal}`,
   }
 };
 
@@ -527,8 +543,8 @@ function setupRealtime(){
 function populateOwnerFilter(){
   const sel = document.getElementById('owner-filter');
   const owners = Array.from(new Set(contacts.map(c => (c.asignado_a || '').trim()).filter(Boolean))).sort();
-  sel.innerHTML = '<option value="">Todos los SDR</option>' +
-    '<option value="__sin_asignar__">Sin asignar</option>' +
+  sel.innerHTML = `<option value="">${t('todos_sdr')}</option>` +
+    `<option value="__sin_asignar__">${t('sin_asignar')}</option>` +
     owners.map(o => `<option value="${o}">${o}</option>`).join('');
   if ([...sel.options].some(o => o.value === filterOwner)) sel.value = filterOwner;
 
@@ -539,6 +555,23 @@ function populateOwnerFilter(){
     document.body.appendChild(dl);
   }
   dl.innerHTML = owners.map(o => `<option value="${o}">`).join('');
+
+  populateSectorOrigenFilters();
+}
+
+function populateSectorOrigenFilters(){
+  const selSector = document.getElementById('sector-filter');
+  const sectores = Array.from(new Set(contacts.map(c => (c.sector || '').trim()).filter(Boolean))).sort();
+  selSector.innerHTML = `<option value="">${t('todos_sector')}</option>` +
+    sectores.map(s => `<option value="${s}">${s.charAt(0).toUpperCase() + s.slice(1)}</option>`).join('');
+  if ([...selSector.options].some(o => o.value === filterSector)) selSector.value = filterSector;
+
+  const selOrigen = document.getElementById('origen-filter');
+  const origenes = Array.from(new Set(contacts.map(c => (c.fuente || '').trim()).filter(Boolean))).sort();
+  const origenLabel = (o) => o === 'google_places' ? t('origen_google') : o === 'manual' ? t('origen_manual') : o === 'apollo' ? t('origen_apollo') : o;
+  selOrigen.innerHTML = `<option value="">${t('todos_origen')}</option>` +
+    origenes.map(o => `<option value="${o}">${origenLabel(o)}</option>`).join('');
+  if ([...selOrigen.options].some(o => o.value === filterOrigen)) selOrigen.value = filterOrigen;
 }
 
 function getMyName(){ return localStorage.getItem('massatorii_sdr_nombre') || ''; }
@@ -565,6 +598,10 @@ function applyLangStatic(){
   document.getElementById('opt-todos-numeros').textContent = t('todos_numeros');
   document.getElementById('opt-solo-movil').textContent = t('solo_movil');
   document.getElementById('opt-solo-fijo').textContent = t('solo_fijo');
+  const optTodosSector = document.getElementById('opt-todos-sector');
+  if(optTodosSector) optTodosSector.textContent = t('todos_sector');
+  const optTodosOrigen = document.getElementById('opt-todos-origen');
+  if(optTodosOrigen) optTodosOrigen.textContent = t('todos_origen');
   document.getElementById('soy-word').textContent = t('soy');
   document.getElementById('search').placeholder = t('buscar_ph');
   document.getElementById('refresh').textContent = t('actualizar');
@@ -855,6 +892,12 @@ function filteredContacts(){
   } else if(filterPhone === 'fijo'){
     list = list.filter(c => esMovil(c.telefono) === false);
   }
+  if(filterSector){
+    list = list.filter(c => (c.sector || '').trim() === filterSector);
+  }
+  if(filterOrigen){
+    list = list.filter(c => (c.fuente || '').trim() === filterOrigen);
+  }
   if(!filterText) return list;
   const q = filterText.toLowerCase();
   return list.filter(c => (c.nombre||'').toLowerCase().includes(q) || (c.empresa||'').toLowerCase().includes(q));
@@ -878,6 +921,14 @@ function renderStats(){
   document.getElementById('s-conversion').textContent = conversion + '%';
 }
 
+function diasSinTocar(ct){
+  if(ct.estado === 'cerrado' || ct.estado === 'descartado') return null;
+  const base = ct.fecha_contacto || ct.created_at;
+  if(!base) return null;
+  const dias = Math.floor((Date.now() - new Date(base).getTime()) / (1000*60*60*24));
+  return dias;
+}
+
 function cardHTML(ct){
   const overdue = ct.proximo_seguimiento && ct.proximo_seguimiento < todayStr();
   const esComoCloser = filterOwner && filterOwner !== '__sin_asignar__' &&
@@ -885,6 +936,8 @@ function cardHTML(ct){
     (ct.asignado_a || '').trim() !== filterOwner;
   const tipoTel = esMovil(ct.telefono);
   const iconoTel = tipoTel === true ? '📱' : tipoTel === false ? '☎️' : '';
+  const dias = diasSinTocar(ct);
+  const estancado = dias != null && dias >= 5;
   return `<div class="card" data-id="${ct.id}">
     <p class="card-name">${ct.nombre}</p>
     <p class="card-empresa">${ct.empresa || ''}${ct.ciudad ? ' · ' + ct.ciudad.split(',')[0] : ''}</p>
@@ -892,6 +945,7 @@ function cardHTML(ct){
     <div class="card-row">${ct.email || t('sin_email')}</div>
     ${esComoCloser ? `<span class="card-flag" style="color:var(--green);">${t('para_cerrar_de')} ${ct.asignado_a}</span>` : ''}
     ${overdue ? `<span class="card-flag">${t('seguimiento_atrasado')}</span>` : ''}
+    ${estancado ? `<span class="card-flag" style="color:var(--gold);">⏱ ${t('sin_tocar')(dias)}</span>` : ''}
   </div>`;
 }
 
@@ -1003,8 +1057,8 @@ function openModal(id, tab){
     <p class="sub">${ct.cargo || ''}${ct.empresa ? ' · ' + ct.empresa : ''}</p>
 
     <div class="quick-links">
-      ${ct.telefono ? `<a class="ql-call" href="tel:${ct.telefono.replace(/[^0-9+]/g,'')}">${t('llamar')}</a>` : ''}
-      ${wa ? `<a class="ql-wa" href="${wa}" target="_blank" rel="noopener">${t('whatsapp')}</a>` : (ct.telefono && esMovil(ct.telefono) === false ? `<span class="ql-wa" style="opacity:0.4; cursor:default;">${t('fijo_sin_wa')}</span>` : '')}
+      ${ct.telefono ? `<a class="ql-call" id="ql-call-btn" href="tel:${ct.telefono.replace(/[^0-9+]/g,'')}">${t('llamar')}</a>` : ''}
+      ${wa ? `<a class="ql-wa" id="ql-wa-btn" href="${wa}" target="_blank" rel="noopener">${t('whatsapp')}</a>` : (ct.telefono && esMovil(ct.telefono) === false ? `<span class="ql-wa" style="opacity:0.4; cursor:default;">${t('fijo_sin_wa')}</span>` : '')}
       ${ct.email ? `<a class="ql-mail" href="mailto:${ct.email}">${t('email')}</a>` : ''}
     </div>
 
@@ -1148,6 +1202,7 @@ function openModal(id, tab){
   document.getElementById('btn-save').addEventListener('click', saveContact);
   document.getElementById('btn-auditar').addEventListener('click', runAudit);
   wireCopiarInforme();
+  wireAutoContacto();
   const btnCalc = document.getElementById('btn-calcular');
   if(btnCalc) btnCalc.addEventListener('click', calcularPerdida);
 }
@@ -1315,6 +1370,43 @@ function wireCopiarInforme(){
   });
 }
 
+async function registrarContactoAutomatico(canal){
+  if(!activeContact) return;
+  // Solo movemos de fase si sigue en "pendiente" - si ya está más avanzado, no lo tocamos
+  const soloTocaFecha = activeContact.estado !== 'pendiente';
+
+  const stamp = new Date().toLocaleString('es-ES', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+  const entry = `[${stamp}] ${t('contacto_auto')(canal)}`;
+  const historialNuevo = activeContact.historial ? `${activeContact.historial}\n---\n${entry}` : entry;
+
+  const updates = {
+    fecha_contacto: new Date().toISOString(),
+    historial: historialNuevo
+  };
+
+  if(!soloTocaFecha){
+    updates.estado = 'contactado';
+    if(!activeContact.proximo_seguimiento){
+      const fecha = new Date();
+      fecha.setDate(fecha.getDate() + 2);
+      updates.proximo_seguimiento = fecha.toISOString().slice(0,10);
+    }
+  }
+
+  const { error } = await sb.from('pipeline_manual').update(updates).eq('id', activeContact.id);
+  if(!error){
+    Object.assign(activeContact, updates);
+    loadContacts();
+  }
+}
+
+function wireAutoContacto(){
+  const btnCall = document.getElementById('ql-call-btn');
+  const btnWa = document.getElementById('ql-wa-btn');
+  if(btnCall) btnCall.addEventListener('click', () => registrarContactoAutomatico('Llamada'));
+  if(btnWa) btnWa.addEventListener('click', () => registrarContactoAutomatico('WhatsApp'));
+}
+
 function setModalTab(tab){
   modalTab = tab;
   document.querySelectorAll('.modal-tab-btn').forEach(b => b.classList.toggle('active', b.getAttribute('data-mtab')===tab));
@@ -1372,6 +1464,8 @@ document.getElementById('refresh').addEventListener('click', loadContacts);
 document.getElementById('search').addEventListener('input', (e) => { filterText = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
 document.getElementById('owner-filter').addEventListener('change', (e) => { filterOwner = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
 document.getElementById('phone-filter').addEventListener('change', (e) => { filterPhone = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
+document.getElementById('sector-filter').addEventListener('change', (e) => { filterSector = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
+document.getElementById('origen-filter').addEventListener('change', (e) => { filterOrigen = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
