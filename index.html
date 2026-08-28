@@ -65,6 +65,14 @@
   .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 1.5rem; }
   .kpi { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius); padding: 1rem 1.25rem; }
   .kpi-label { font-size: 12px; color: var(--text-muted); margin-bottom: 8px; }
+  .kpi-label-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; }
+  .kpi-label-row .kpi-label { margin-bottom: 0; }
+  .kpi-icon { font-size: 15px; color: var(--text-muted); opacity: 0.8; }
+  .kpi-accent .kpi-icon { color: var(--accent); }
+  .kpi-success .kpi-icon { color: var(--success); }
+  .kpi-warning .kpi-icon { color: var(--warning); }
+  .kpi { transition: border-color 0.15s, transform 0.15s; }
+  .kpi:hover { border-color: var(--border-strong); transform: translateY(-1px); }
   .kpi-value { font-size: 32px; font-weight: 500; line-height: 1; color: var(--text-primary); }
   .kpi-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
   .kpi-accent .kpi-value { color: var(--accent); }
@@ -179,7 +187,7 @@
   </div>
 
   <div id="resumen-view">
-  <div id="insight-callout" class="card" style="margin-bottom:1rem; display:none; border-left:3px solid var(--accent);">
+  <div id="insight-callout" class="card" style="margin-bottom:1rem; display:none; border-left:3px solid var(--accent); background:linear-gradient(135deg, var(--accent-bg), var(--surface));">
     <div style="display:flex; align-items:flex-start; gap:10px;">
       <i class="ti ti-bulb" style="font-size:18px; color:var(--accent); margin-top:1px;"></i>
       <p id="insight-text" style="font-size:14px; color:var(--text-primary); line-height:1.5;"></p>
@@ -430,11 +438,19 @@ function applyClienteFilter() {
   if (document.getElementById('pipeline-view').classList.contains('active')) renderKanban();
 }
 
+function saludoHora() {
+  const h = new Date().getHours();
+  if (h < 12) return 'Buenos días';
+  if (h < 20) return 'Buenas tardes';
+  return 'Buenas noches';
+}
+
 function updateHeaderForForcedClient() {
   if (!forcedCliente) return;
   const cliente = allClientesList.find(c => c.id === forcedCliente);
-  document.getElementById('dashboard-title').textContent = cliente ? cliente.nombre : 'Dashboard';
-  document.getElementById('dashboard-subtitle').textContent = 'Tus métricas en tiempo real';
+  const nombre = cliente ? cliente.nombre : '';
+  document.getElementById('dashboard-title').textContent = `${saludoHora()}${nombre ? ', ' + nombre : ''} 👋`;
+  document.getElementById('dashboard-subtitle').textContent = 'Esto es lo que está pasando con tus leads ahora mismo.';
 }
 
 function trendHtml(current, previous) {
@@ -451,7 +467,17 @@ function renderInsight(total, totalPrev, tasa, tasaPrev, avgResp, avgRespPrev) {
   const textEl = document.getElementById('insight-text');
   if (!box || !textEl) return;
 
-  if (currentPeriod === 'all' || total === 0) { box.style.display = 'none'; return; }
+  if (currentPeriod === 'all') { box.style.display = 'none'; return; }
+
+  const periodTxt = {week:'Esta semana', last_week:'La semana pasada', month:'Este mes', last_month:'El mes pasado', custom:'En este periodo'}[currentPeriod] || 'En este periodo';
+
+  if (total === 0) {
+    textEl.textContent = totalPrev > 0
+      ? `${periodTxt} todavía no ha entrado ningún lead nuevo — el sistema sigue activo y escuchando.`
+      : `Todavía no hay leads registrados en este periodo. En cuanto entre el primero, lo verás aquí al momento.`;
+    box.style.display = 'block';
+    return;
+  }
 
   const frases = [];
 
@@ -459,22 +485,24 @@ function renderInsight(total, totalPrev, tasa, tasaPrev, avgResp, avgRespPrev) {
     const diffLeads = Math.round(((total - totalPrev) / totalPrev) * 100);
     if (diffLeads > 5) frases.push(`habéis recibido un ${diffLeads}% más de leads`);
     else if (diffLeads < -5) frases.push(`han bajado los leads un ${Math.abs(diffLeads)}%`);
-  } else if (total > 0) {
+    else frases.push(`el volumen de leads se mantiene estable`);
+  } else {
     frases.push(`habéis recibido ${total} lead${total === 1 ? '' : 's'} nuevo${total === 1 ? '' : 's'}`);
   }
 
   if (tasaPrev > 0 && tasa !== tasaPrev) {
     const diffTasa = tasa - tasaPrev;
     frases.push(`la conversión ${diffTasa > 0 ? 'ha mejorado' : 'ha bajado'} ${Math.abs(diffTasa)} puntos`);
+  } else if (tasa > 0 && frases.length < 2) {
+    frases.push(`con una tasa de conversión del ${tasa}%`);
   }
 
   if (avgResp !== null && avgRespPrev !== null && Math.round(avgResp) !== Math.round(avgRespPrev)) {
     frases.push(avgResp < avgRespPrev ? `estáis respondiendo más rápido que antes` : `el tiempo de respuesta ha subido, conviene revisarlo`);
+  } else if (avgResp !== null && frases.length < 2) {
+    frases.push(`con un tiempo medio de respuesta de ${formatMinutes(avgResp)}`);
   }
 
-  if (frases.length === 0) { box.style.display = 'none'; return; }
-
-  const periodTxt = {week:'Esta semana', last_week:'La semana pasada', month:'Este mes', last_month:'El mes pasado', custom:'En este periodo'}[currentPeriod] || 'En este periodo';
   let frase = frases[0];
   if (frases.length > 1) frase += `, y ${frases[1]}`;
 
@@ -528,22 +556,22 @@ function render() {
 
   document.getElementById('kpi-grid').innerHTML = `
     <div class="kpi">
-      <div class="kpi-label">Leads nuevos</div>
+      <div class="kpi-label-row"><i class="ti ti-users kpi-icon"></i><div class="kpi-label">Leads nuevos</div></div>
       <div class="kpi-value">${total}</div>
       <div class="kpi-sub">${currentPeriod === 'all' ? label : trendHtml(total, totalPrev)}</div>
     </div>
     <div class="kpi kpi-accent">
-      <div class="kpi-label">Llamadas agendadas</div>
+      <div class="kpi-label-row"><i class="ti ti-calendar-check kpi-icon"></i><div class="kpi-label">Llamadas agendadas</div></div>
       <div class="kpi-value">${agendados}</div>
       <div class="kpi-sub">${currentPeriod === 'all' ? label : trendHtml(agendados, agendadosPrev)}</div>
     </div>
     <div class="kpi kpi-success">
-      <div class="kpi-label">Tasa de conversión</div>
+      <div class="kpi-label-row"><i class="ti ti-trending-up kpi-icon"></i><div class="kpi-label">Tasa de conversión</div></div>
       <div class="kpi-value">${tasa}%</div>
       <div class="kpi-sub">${currentPeriod === 'all' ? 'leads → llamada' : trendHtml(tasa, tasaPrev)}</div>
     </div>
     <div class="kpi kpi-warning">
-      <div class="kpi-label">Leads activos</div>
+      <div class="kpi-label-row"><i class="ti ti-flame kpi-icon"></i><div class="kpi-label">Leads activos</div></div>
       <div class="kpi-value">${activos}</div>
       <div class="kpi-sub">en conversación (total)</div>
     </div>
