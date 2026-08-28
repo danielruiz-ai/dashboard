@@ -523,10 +523,16 @@ const PAGE_SIZE = 20;
 let boardPage = {};
 let segPage = 1;
 
+let equipoSDR = [];
+
 async function loadContacts(){
   const { data, error } = await sb.from('pipeline_manual').select('*').order('created_at', {ascending:true});
   if(error){ showToast('Error cargando datos'); console.error(error); return; }
   contacts = data || [];
+
+  const { data: equipoData } = await sb.from('equipo_sdr').select('nombre').eq('activo', true);
+  equipoSDR = (equipoData || []).map(e => e.nombre);
+
   populateOwnerFilter();
   renderAll();
   renderStats();
@@ -542,7 +548,8 @@ function setupRealtime(){
 
 function populateOwnerFilter(){
   const sel = document.getElementById('owner-filter');
-  const owners = Array.from(new Set(contacts.map(c => (c.asignado_a || '').trim()).filter(Boolean))).sort();
+  const ownersDeContactos = contacts.map(c => (c.asignado_a || '').trim()).filter(Boolean);
+  const owners = Array.from(new Set([...ownersDeContactos, ...equipoSDR])).sort();
   sel.innerHTML = `<option value="">${t('todos_sdr')}</option>` +
     `<option value="__sin_asignar__">${t('sin_asignar')}</option>` +
     owners.map(o => `<option value="${o}">${o}</option>`).join('');
@@ -870,7 +877,8 @@ function renderEquipo(){
   const body = document.getElementById('equipo-body');
   if(!body) return;
   const today = todayStr();
-  const owners = Array.from(new Set(contacts.map(c => (c.asignado_a || '').trim()).filter(Boolean))).sort();
+  const ownersDeContactos = contacts.map(c => (c.asignado_a || '').trim()).filter(Boolean);
+  const owners = Array.from(new Set([...ownersDeContactos, ...equipoSDR])).sort();
 
   if(owners.length === 0){
     body.innerHTML = `<tr><td colspan="7" style="color:var(--text-muted); text-align:center;">${t('sin_datos')}</td></tr>`;
