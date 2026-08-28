@@ -550,10 +550,21 @@ function populateOwnerFilter(){
   const sel = document.getElementById('owner-filter');
   const ownersDeContactos = contacts.map(c => (c.asignado_a || '').trim()).filter(Boolean);
   const owners = Array.from(new Set([...ownersDeContactos, ...equipoSDR])).sort();
-  sel.innerHTML = `<option value="">${t('todos_sdr')}</option>` +
-    `<option value="__sin_asignar__">${t('sin_asignar')}</option>` +
-    owners.map(o => `<option value="${o}">${o}</option>`).join('');
-  if ([...sel.options].some(o => o.value === filterOwner)) sel.value = filterOwner;
+  const miNombre = getMyName();
+
+  if(!isAdmin() && miNombre){
+    // Cada SDR solo puede ver lo suyo - no se les deja cambiar a "Todos" ni a otra persona
+    sel.innerHTML = `<option value="${miNombre}">${miNombre}</option>`;
+    sel.value = miNombre;
+    sel.disabled = true;
+    filterOwner = miNombre;
+  } else {
+    sel.disabled = false;
+    sel.innerHTML = `<option value="">${t('todos_sdr')}</option>` +
+      `<option value="__sin_asignar__">${t('sin_asignar')}</option>` +
+      owners.map(o => `<option value="${o}">${o}</option>`).join('');
+    if ([...sel.options].some(o => o.value === filterOwner)) sel.value = filterOwner;
+  }
 
   let dl = document.getElementById('sdr-names');
   if(!dl){
@@ -777,9 +788,9 @@ function openIdentityModal(){
     localStorage.setItem('massatorii_sdr_nombre', trimmed);
     document.getElementById('soy-label').textContent = trimmed || 'elegir';
     filterOwner = trimmed;
-    document.getElementById('owner-filter').value = trimmed;
     boardPage = {}; segPage = 1;
     updateAdminVisibility();
+    populateOwnerFilter();
     closeModal();
     renderAll();
   });
