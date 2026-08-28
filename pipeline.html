@@ -792,29 +792,39 @@ const NICHOS = {
 
 function esMovil(phone){
   if(!phone) return null;
-  const digits = phone.replace(/[^0-9]/g, '');
+  let digits = phone.replace(/[^0-9]/g, '');
+  // Quitar el prefijo internacional "00" si alguien lo puso así en vez de "+"
+  if(digits.startsWith('00')) digits = digits.slice(2);
+
   // España: +34, móviles empiezan por 6 o 7
-  if(digits.startsWith('34')){
+  if(digits.startsWith('34') && digits.length >= 11){
     const local = digits.slice(2);
     return /^[67]/.test(local);
   }
   // Reino Unido: +44, móviles empiezan por 07 (sin el 0 inicial: 7)
-  if(digits.startsWith('44')){
+  if(digits.startsWith('44') && digits.length >= 12){
     const local = digits.slice(2);
     return /^7/.test(local);
   }
   // Sudáfrica: +27, móviles empiezan por 6, 7 u 8; fijos por prefijos de área (1-5)
-  if(digits.startsWith('27')){
+  if(digits.startsWith('27') && digits.length >= 11){
     const local = digits.slice(2);
     return /^[678]/.test(local);
   }
-  // Fallback genérico: si no reconocemos el prefijo de país, asumimos que no lo sabemos
+  // Fallback: número metido sin prefijo de país (ej. "612 345 678" en vez de "+34 612 345 678")
+  // Asumimos España, que es el mercado principal, si tiene 9 dígitos exactos
+  if(digits.length === 9){
+    return /^[67]/.test(digits) ? true : (/^[89]/.test(digits) ? false : null);
+  }
+  // Fallback genérico: no reconocemos el prefijo ni el patrón, no lo sabemos
   return null;
 }
 
-function waLink(phone, empresa, asignado_a, sector, idioma){
+function waLink(phone, empresa, asignado_a, sector, idioma, estado){
   if(!phone) return null;
   if(esMovil(phone) === false) return null; // fijo detectado: no ofrecer botón de WhatsApp
+
+  const esSeguimiento = estado && estado !== 'pendiente'; // ya se contactó antes, no es el primer mensaje
 
   if(idioma === 'en'){
     const nicho_en = {
@@ -822,6 +832,11 @@ function waLink(phone, empresa, asignado_a, sector, idioma){
       legal:        { plural: 'law firms', posesivo: 'your firm', perdidos: 'cases' }
     }[(sector||'').toLowerCase()] || { plural: 'businesses like yours', posesivo: 'your business', perdidos: 'clients' };
     const empresaEn = empresa || nicho_en.posesivo;
+
+    if(esSeguimiento){
+      const mensajeSeguimientoEn = `Hi again! ${asignado_a ? asignado_a + ' here, ' : ''}just following up on my previous message about how we help ${nicho_en.plural} stop losing ${nicho_en.perdidos} by responding faster. Did you get a chance to see it? Happy to answer any questions 🙂`;
+      return `https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(mensajeSeguimientoEn)}`;
+    }
     const presentacionEn = asignado_a ? `Hi! I'm ${asignado_a}, from Massatorii.` : `Hi! This is Massatorii.`;
     const mensajeEn = `${presentacionEn} We help ${nicho_en.plural} stop losing ${nicho_en.perdidos} by responding too slowly. Would you like a free quick analysis of how many ${nicho_en.perdidos} you could be losing right now at ${empresaEn}?`;
     return `https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(mensajeEn)}`;
@@ -829,6 +844,12 @@ function waLink(phone, empresa, asignado_a, sector, idioma){
 
   const nicho = NICHOS[(sector||'').toLowerCase()] || { plural: 'negocios como el vuestro', posesivo: 'vuestro negocio', perdidos: 'clientes' };
   const nombreEmpresa = empresa || nicho.posesivo;
+
+  if(esSeguimiento){
+    const mensajeSeguimiento = `Hola de nuevo!${asignado_a ? ' Soy ' + asignado_a + ',' : ''} te escribía por si pudiste ver mi mensaje anterior sobre cómo ayudamos a ${nicho.plural} a no perder ${nicho.perdidos} por tardar en responder. ¿Alguna duda que te pueda resolver? 🙂`;
+    return `https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(mensajeSeguimiento)}`;
+  }
+
   const presentacion = asignado_a
     ? `Hola! Soy ${asignado_a}, de Massatorii.`
     : `Hola! Somos Massatorii.`;
@@ -1048,7 +1069,7 @@ function openModal(id, tab){
   if(!activeContact) return;
   modalTab = tab || 'datos';
   const ct = activeContact;
-  const wa = waLink(ct.telefono, ct.empresa, ct.asignado_a, ct.sector, ct.idioma);
+  const wa = waLink(ct.telefono, ct.empresa, ct.asignado_a, ct.sector, ct.idioma, ct.estado);
 
   const historialEntries = (ct.historial || '').split('\n---\n').filter(Boolean);
 
