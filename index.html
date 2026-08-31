@@ -771,7 +771,10 @@ function renderKanban() {
       const fechaRef = l.fecha_ultimo_contacto || l.created_at;
       const horasEnFase = fechaRef ? Math.round((new Date() - new Date(fechaRef)) / 3600000) : null;
       const tiempoTexto = horasEnFase === null ? '' : horasEnFase < 24 ? `hace ${horasEnFase}h` : `hace ${Math.round(horasEnFase/24)}d`;
-      return `<div class="kanban-card"><div class="kanban-card-name">${nombre}</div><span class="badge badge-${temp}">${temp}</span><div class="kanban-card-time">${tiempoTexto}</div></div>`;
+      const telHtml = l.telefono
+        ? `<div class="kanban-card-time" style="color:var(--accent); font-weight:600;">📞 ${l.telefono}</div>`
+        : (l.agendado ? `<div class="kanban-card-time" style="color:var(--warning);">Sin teléfono</div>` : '');
+      return `<div class="kanban-card"><div class="kanban-card-name">${nombre}</div><span class="badge badge-${temp}">${temp}</span>${telHtml}<div class="kanban-card-time">${tiempoTexto}</div></div>`;
     }).join('');
     return `<div class="kanban-column"><div class="kanban-column-header"><span>${fase.charAt(0).toUpperCase() + fase.slice(1)}</span><span class="kanban-count">${leadsEnFase.length}</span></div><div class="kanban-cards">${cards || '<div class="kanban-empty">Sin leads</div>'}</div></div>`;
   }).join('');
