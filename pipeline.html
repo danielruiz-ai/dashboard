@@ -447,6 +447,7 @@ const STR = {
     nombre_lbl: 'Nombre', empresa_lbl: 'Empresa', telefono_req: 'Teléfono (obligatorio)',
     ciudad_ph: 'ej. Madrid, España', sector_lbl: 'Sector', idioma_lbl: 'Idioma del contacto',
     guardar_contacto: 'Guardar contacto', nombre_tel_obligatorio: 'El nombre y el teléfono son obligatorios',
+    falta_identidad: 'Primero pon tu nombre en "Soy: elegir" arriba, si no el contacto se queda sin asignar',
     contacto_creado: 'Contacto creado', lista_instrucciones: 'Pega tu lista, una línea por contacto, separado por comas: Nombre, Empresa, Teléfono, Ciudad, Sector',
     lista_ph: 'María García, Inmobiliaria X, +34 600 000 000, Madrid, inmobiliaria', importar_lista: 'Importar lista',
     lista_vacia: 'Pega al menos una línea', filas_importadas: (n) => `${n} contacto(s) importado(s)`,
@@ -503,6 +504,7 @@ const STR = {
     nombre_lbl: 'Name', empresa_lbl: 'Company', telefono_req: 'Phone (required)',
     ciudad_ph: 'e.g. Madrid, Spain', sector_lbl: 'Sector', idioma_lbl: "Contact's language",
     guardar_contacto: 'Save contact', nombre_tel_obligatorio: 'Name and phone are required',
+    falta_identidad: "Set your name in \"I'm: choose\" above first, or the contact won't be assigned to anyone",
     contacto_creado: 'Contact created', lista_instrucciones: 'Paste your list, one line per contact, comma-separated: Name, Company, Phone, City, Sector',
     lista_ph: 'Mary Smith, Real Estate X, +27 82 000 0000, Cape Town, inmobiliaria', importar_lista: 'Import list',
     lista_vacia: 'Paste at least one line', filas_importadas: (n) => `${n} contact(s) imported`,
@@ -720,6 +722,9 @@ async function guardarNuevoContacto(){
   const telefono = document.getElementById('nc-telefono').value.trim();
   if(!nombre || !telefono){ showToast(t('nombre_tel_obligatorio')); return; }
 
+  const miNombre = getMyName();
+  if(!miNombre){ showToast(t('falta_identidad')); return; }
+
   const nuevo = {
     nombre,
     empresa: document.getElementById('nc-empresa').value.trim(),
@@ -730,7 +735,7 @@ async function guardarNuevoContacto(){
     idioma: document.getElementById('nc-idioma').value,
     estado: 'pendiente',
     fuente: 'manual',
-    asignado_a: getMyName() || null
+    asignado_a: miNombre
   };
 
   const { error } = await sb.from('pipeline_manual').insert(nuevo);
@@ -745,7 +750,9 @@ async function importarLista(){
   const lineas = raw.split('\n').map(l => l.trim()).filter(Boolean);
   if(lineas.length === 0){ showToast(t('lista_vacia')); return; }
 
-  const miNombre = getMyName() || null;
+  const miNombre = getMyName();
+  if(!miNombre){ showToast(t('falta_identidad')); return; }
+
   const filas = [];
   let saltadas = 0;
   for(const linea of lineas){
