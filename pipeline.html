@@ -230,6 +230,7 @@
   .modal-pane{display:none;}
   .modal-pane.active{display:block;}
   .field{margin-bottom:14px;}
+  .field-help{font-size:11px; color:var(--text-muted); margin:4px 0 0; line-height:1.4;}
   .field label{
     display:block; font-size:11px; color:var(--text-muted);
     text-transform:uppercase; letter-spacing:0.5px; margin-bottom:5px;
@@ -448,6 +449,9 @@ const STR = {
     ciudad_ph: 'ej. Madrid, España', sector_lbl: 'Sector', idioma_lbl: 'Idioma del contacto',
     guardar_contacto: 'Guardar contacto', nombre_tel_obligatorio: 'El nombre y el teléfono son obligatorios',
     falta_identidad: 'Primero pon tu nombre en "Soy: elegir" arriba, si no el contacto se queda sin asignar',
+    nombre_ph: 'ej. María García', empresa_ph: 'ej. Inmobiliaria Centro S.L.',
+    nombre_ayuda: 'La persona de contacto, o el nombre del negocio si no hay una persona concreta.',
+    empresa_ayuda: 'El nombre completo del negocio — no una palabra suelta como "fontanería" o "refrigeración". Sin esto, la auditoría no lo va a encontrar en Google.',
     contacto_creado: 'Contacto creado', lista_instrucciones: 'Pega tu lista, una línea por contacto, separado por comas: Nombre, Empresa, Teléfono, Ciudad, Sector',
     lista_ph: 'María García, Inmobiliaria X, +34 600 000 000, Madrid, inmobiliaria', importar_lista: 'Importar lista',
     lista_vacia: 'Pega al menos una línea', filas_importadas: (n) => `${n} contacto(s) importado(s)`,
@@ -505,6 +509,9 @@ const STR = {
     ciudad_ph: 'e.g. Madrid, Spain', sector_lbl: 'Sector', idioma_lbl: "Contact's language",
     guardar_contacto: 'Save contact', nombre_tel_obligatorio: 'Name and phone are required',
     falta_identidad: "Set your name in \"I'm: choose\" above first, or the contact won't be assigned to anyone",
+    nombre_ph: 'e.g. Mary Smith', empresa_ph: 'e.g. Centro Real Estate Ltd.',
+    nombre_ayuda: 'The contact person, or the business name if there\'s no specific person.',
+    empresa_ayuda: 'The full business name — not a single generic word like "plumbing" or "refrigeration". Without this, the audit won\'t be able to find it on Google.',
     contacto_creado: 'Contact created', lista_instrucciones: 'Paste your list, one line per contact, comma-separated: Name, Company, Phone, City, Sector',
     lista_ph: 'Mary Smith, Real Estate X, +27 82 000 0000, Cape Town, inmobiliaria', importar_lista: 'Import list',
     lista_vacia: 'Paste at least one line', filas_importadas: (n) => `${n} contact(s) imported`,
@@ -676,8 +683,8 @@ function openNuevoContactoModal(){
     </div>
 
     <div class="modal-pane active" id="nc-pane-uno">
-      <div class="field"><label>${t('nombre_lbl')}</label><input type="text" id="nc-nombre"></div>
-      <div class="field"><label>${t('empresa_lbl')}</label><input type="text" id="nc-empresa"></div>
+      <div class="field"><label>${t('nombre_lbl')}</label><input type="text" id="nc-nombre" placeholder="${t('nombre_ph')}"><p class="field-help">${t('nombre_ayuda')}</p></div>
+      <div class="field"><label>${t('empresa_lbl')}</label><input type="text" id="nc-empresa" placeholder="${t('empresa_ph')}"><p class="field-help">${t('empresa_ayuda')}</p></div>
       <div class="field"><label>${t('telefono_req')}</label><input type="text" id="nc-telefono" placeholder="+34 600 000 000"></div>
       <div class="field"><label>${t('email')}</label><input type="text" id="nc-email"></div>
       <div class="field"><label>${t('ciudad')}</label><input type="text" id="nc-ciudad" placeholder="${t('ciudad_ph')}"></div>
