@@ -843,6 +843,12 @@ function esMovil(phone){
     const local = digits.slice(2);
     return /^[678]/.test(local);
   }
+  // Argentina: +54. El móvil "de verdad" lleva un 9 tras el prefijo (+54 9 11 ...),
+  // pero casi nadie lo escribe así al pasar su número a mano - en la práctica,
+  // si alguien te da un +54 como contacto, es su móvil en el 99% de los casos.
+  if(digits.startsWith('54') && digits.length >= 12){
+    return true;
+  }
   // Fallback: número metido sin prefijo de país (ej. "612 345 678" en vez de "+34 612 345 678")
   // Asumimos España, que es el mercado principal, si tiene 9 dígitos exactos
   if(digits.length === 9){
