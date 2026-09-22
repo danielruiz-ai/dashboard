@@ -424,7 +424,9 @@ const STR = {
     proxima_fecha: 'Próxima fecha de seguimiento', anadir_nota: 'Añadir nota al historial',
     nota_ph: 'Qué se habló, próximos pasos...', historial_lbl: 'Historial',
     cerrar: 'Cerrar', guardar: 'Guardar', quien_eres: '¿Quién eres?',
-    quien_eres_sub: 'Así el CRM te muestra solo tus contactos asignados.', tu_nombre: 'Tu nombre',
+    quien_eres_sub: 'Entra con tu nombre y contraseña para ver solo tus contactos.', tu_nombre: 'Tu nombre',
+    tu_password: 'Tu contraseña', entrar: 'Entrar', rellena_login: 'Escribe tu nombre y tu contraseña',
+    login_incorrecto: 'Nombre o contraseña incorrectos', confirmar_logout: '¿Cerrar sesión?',
     cancelar: 'Cancelar', para_cerrar_de: 'Para cerrar · de', seguimiento_atrasado: 'Seguimiento atrasado',
     aviso_no_generada: 'Todavía no hay auditoría generada para este contacto. Si ya tienes las respuestas de arriba, se sumarán automáticamente al generar.',
     generar_auditoria: 'Generar auditoría ahora', regenerar_auditoria: 'Regenerar auditoría',
@@ -484,7 +486,9 @@ const STR = {
     proxima_fecha: 'Next follow-up date', anadir_nota: 'Add note to history',
     nota_ph: 'What was discussed, next steps...', historial_lbl: 'History',
     cerrar: 'Close', guardar: 'Save', quien_eres: 'Who are you?',
-    quien_eres_sub: 'This way the CRM only shows your assigned contacts.', tu_nombre: 'Your name',
+    quien_eres_sub: 'Log in with your name and password to see only your contacts.', tu_nombre: 'Your name',
+    tu_password: 'Your password', entrar: 'Log in', rellena_login: 'Enter your name and password',
+    login_incorrecto: 'Wrong name or password', confirmar_logout: 'Log out?',
     cancelar: 'Cancel', para_cerrar_de: 'To close · from', seguimiento_atrasado: 'Follow-up overdue',
     aviso_no_generada: "No audit generated for this contact yet. If you already have the answers above, they'll be added automatically when generated.",
     generar_auditoria: 'Generate audit now', regenerar_auditoria: 'Regenerate audit',
@@ -601,12 +605,13 @@ function populateSectorOrigenFilters(){
   if ([...selOrigen.options].some(o => o.value === filterOrigen)) selOrigen.value = filterOrigen;
 }
 
-function getMyName(){ return localStorage.getItem('massatorii_sdr_nombre') || ''; }
+let currentUserName = '';
+let currentUserEmail = '';
 
-const ADMIN_NAMES = ['daniel', 'dani'];
+function getMyName(){ return currentUserName; }
 
 function isAdmin(){
-  return ADMIN_NAMES.includes(getMyName().trim().toLowerCase());
+  return currentUserEmail === 'dani@crm.massatorii.com';
 }
 
 function updateAdminVisibility(){
@@ -661,14 +666,35 @@ function setupLangToggle(){
   try { applyLangStatic(); } catch(e) { console.error('applyLangStatic error:', e); }
 }
 
-function setupIdentity(){
-  const myName = getMyName();
-  document.getElementById('soy-label').textContent = myName || 'elegir';
-  if(myName) filterOwner = myName; // abre el CRM ya filtrado a tu propia lista
-  updateAdminVisibility();
-
-  document.getElementById('btn-soy').addEventListener('click', openIdentityModal);
+async function setupIdentity(){
+  document.getElementById('btn-soy').addEventListener('click', () => {
+    if(confirm(t('confirmar_logout'))) cerrarSesion();
+  });
   document.getElementById('btn-nuevo-contacto').addEventListener('click', openNuevoContactoModal);
+
+  const { data: { session } } = await sb.auth.getSession();
+  if(session && session.user){
+    aplicarSesion(session);
+    loadContacts();
+    setupRealtime();
+  } else {
+    openLoginModal();
+  }
+}
+
+function aplicarSesion(session){
+  currentUserName = session.user.user_metadata?.nombre || session.user.email.split('@')[0];
+  currentUserEmail = session.user.email;
+  document.getElementById('soy-label').textContent = currentUserName;
+  filterOwner = currentUserName;
+  updateAdminVisibility();
+}
+
+function cerrarSesion(){
+  sb.auth.signOut();
+  currentUserName = '';
+  currentUserEmail = '';
+  location.reload();
 }
 
 const SECTORES = ['inmobiliaria', 'legal', 'fitness', 'fotografia', 'autoescuela', 'otro'];
@@ -782,32 +808,41 @@ async function importarLista(){
   loadContacts();
 }
 
-function openIdentityModal(){
+function openLoginModal(errorMsg){
   document.getElementById('modal').innerHTML = `
     <h3>${t('quien_eres')}</h3>
     <p class="sub">${t('quien_eres_sub')}</p>
     <div class="field">
       <label>${t('tu_nombre')}</label>
-      <input type="text" id="f-mi-nombre" list="sdr-names" value="${getMyName()}" placeholder="ej. David">
+      <input type="text" id="f-mi-nombre" placeholder="ej. David">
     </div>
+    <div class="field">
+      <label>${t('tu_password')}</label>
+      <input type="password" id="f-mi-password" placeholder="••••••••">
+    </div>
+    ${errorMsg ? `<p style="color:var(--red); font-size:12px; margin:-6px 0 0;">${errorMsg}</p>` : ''}
     <div class="modal-actions">
-      <button class="btn-secondary" id="btn-close">${t('cancelar')}</button>
-      <button class="btn-primary" id="btn-guardar-nombre">${t('guardar')}</button>
+      <button class="btn-primary" id="btn-login" style="width:100%;">${t('entrar')}</button>
     </div>
   `;
   document.getElementById('overlay').classList.add('open');
-  document.getElementById('btn-close').addEventListener('click', closeModal);
-  document.getElementById('btn-guardar-nombre').addEventListener('click', () => {
-    const trimmed = document.getElementById('f-mi-nombre').value.trim();
-    localStorage.setItem('massatorii_sdr_nombre', trimmed);
-    document.getElementById('soy-label').textContent = trimmed || 'elegir';
-    filterOwner = trimmed;
-    boardPage = {}; segPage = 1;
-    updateAdminVisibility();
-    populateOwnerFilter();
-    closeModal();
-    renderAll();
-  });
+  document.getElementById('btn-login').addEventListener('click', doLogin);
+  document.getElementById('f-mi-password').addEventListener('keydown', (e) => { if(e.key === 'Enter') doLogin(); });
+  document.getElementById('f-mi-nombre').focus();
+}
+
+async function doLogin(){
+  const nombre = document.getElementById('f-mi-nombre').value.trim();
+  const password = document.getElementById('f-mi-password').value;
+  if(!nombre || !password){ openLoginModal(t('rellena_login')); return; }
+  const email = nombre.toLowerCase() + '@crm.massatorii.com';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password });
+  if(error){ openLoginModal(t('login_incorrecto')); return; }
+  aplicarSesion(data.session);
+  closeModal();
+  populateOwnerFilter();
+  loadContacts();
+  setupRealtime();
 }
 
 function showToast(msg){
@@ -1517,7 +1552,7 @@ async function saveContact(){
   loadContacts();
 }
 
-document.getElementById('overlay').addEventListener('click', (e) => { if(e.target.id === 'overlay') closeModal(); });
+document.getElementById('overlay').addEventListener('click', (e) => { if(e.target.id === 'overlay' && currentUserEmail) closeModal(); });
 document.getElementById('refresh').addEventListener('click', loadContacts);
 document.getElementById('search').addEventListener('input', (e) => { filterText = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
 document.getElementById('owner-filter').addEventListener('change', (e) => { filterOwner = e.target.value; boardPage = {}; segPage = 1; renderAll(); });
@@ -1537,8 +1572,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 
 setupLangToggle();
 setupIdentity();
-loadContacts();
-setupRealtime();
 </script>
 </body>
 </html>
