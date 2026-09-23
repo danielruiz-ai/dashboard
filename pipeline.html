@@ -910,7 +910,7 @@ function waLink(phone, empresa, asignado_a, sector, idioma, estado){
       const mensajeSeguimientoEn = `Hi again! ${asignado_a ? asignado_a + ' here, ' : ''}just following up on my previous message about how we help ${nicho_en.plural} stop losing ${nicho_en.perdidos} by responding faster. Did you get a chance to see it? Happy to answer any questions 🙂`;
       return `https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(mensajeSeguimientoEn)}`;
     }
-    const presentacionEn = asignado_a ? `Hi! I'm ${asignado_a}.` : `Hi!`;
+    const presentacionEn = asignado_a ? `Hi! I'm ${asignado_a}, from Massatorii.` : `Hi! This is Massatorii.`;
     const mensajeEn = `${presentacionEn} Quick question: when someone interested reaches out outside business hours, do you usually lose them because you can't reply in time, or do you always manage to get back to them?`;
     return `https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(mensajeEn)}`;
   }
@@ -923,7 +923,7 @@ function waLink(phone, empresa, asignado_a, sector, idioma, estado){
     return `https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(mensajeSeguimiento)}`;
   }
 
-  const presentacion = asignado_a ? `Hola! Soy ${asignado_a}.` : `Hola!`;
+  const presentacion = asignado_a ? `Hola! Soy ${asignado_a}, de Massatorii.` : `Hola! Somos Massatorii.`;
   const mensaje = `${presentacion} Una pregunta rápida: cuando te escribe alguien interesado fuera de horario, ¿sueles perderlo por no responder a tiempo, o te da tiempo a contestar siempre?`;
   return `https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(mensaje)}`;
 }
