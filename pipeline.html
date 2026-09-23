@@ -837,11 +837,7 @@ async function doLogin(){
   if(!nombre || !password){ openLoginModal(t('rellena_login')); return; }
   const email = nombre.toLowerCase() + '@crm.massatorii.com';
   const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if(error){
-    console.error('Login error:', error);
-    openLoginModal(`${t('login_incorrecto')} (debug: ${error.message})`);
-    return;
-  }
+  if(error){ openLoginModal(t('login_incorrecto')); return; }
   aplicarSesion(data.session);
   closeModal();
   populateOwnerFilter();
