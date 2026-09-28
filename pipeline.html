@@ -539,7 +539,7 @@ let segPage = 1;
 let equipoSDR = [];
 
 async function loadContacts(){
-  const { data, error } = await sb.from('pipeline_manual').select('*').order('created_at', {ascending:true});
+  const { data, error } = await (async () => { let all = []; let from = 0; const pg = 1000; while (true) { const r = await sb.from('pipeline_manual').select('*').order('created_at', {ascending:true}).range(from, from + pg - 1); if (r.error) return r; all = all.concat(r.data || []); if (!r.data || r.data.length < pg) break; from += pg; } return { data: all, error: null }; })();
   if(error){ showToast('Error cargando datos'); console.error(error); return; }
   contacts = data || [];
 
